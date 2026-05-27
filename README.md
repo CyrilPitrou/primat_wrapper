@@ -46,8 +46,7 @@ primat_wrapper/
 |-- PrimatTheory.yaml
 |-- PrimatLikelihood.yaml
 ├── yaml/
-│   ├── run_mcmc_bbn.yaml
-│   └── run_mcmc_bbn_class.yaml
+│   └── run_bbn_*.yaml
 ├── PRIMAT2024/          ← PRIMAT code goes here
 │   └── PythonInterface/
 │       └── PyPRIMAT_FinalAbundances.m
@@ -104,9 +103,9 @@ likelihood:
 Then run with Cobaya:
 
 ```bash
-cobaya-run yaml/run_mcmc_bbn.yaml
+cobaya-run yaml/run_bbn.yaml
 # or, to also use CLASS for the CMB:
-cobaya-run yaml/run_mcmc_bbn_class.yaml
+cobaya-run yaml/run_bbn_Nrelat.yaml
 ```
 
 ### MathKernel auto-detection
@@ -125,7 +124,7 @@ To override, set `MathKernelCommand` explicitly in your run YAML:
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    MathKernelCommand: "math13"
+    MathKernelCommand: "/pathtoyourMathKernel"
 ```
 
 ## Configuration reference
@@ -160,3 +159,4 @@ files are used only to provide Cobaya with LaTeX labels for the derived paramete
 | `DH_PRIMAT_sigma` | `2.754096e-7` | PRIMAT theoretical uncertainty on D/H |
 
 Observational and theoretical uncertainties are added in quadrature.
+Nuclear reactions error are assumed not to depend on the baryon density (approximately correct if baryons density not far from standard one)
