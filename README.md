@@ -11,8 +11,8 @@ Gaussian likelihood against observed He-4 and D/H measurements.
 |---|---|---|
 | `primat_theory.py` | `PrimatTheory` | Runs PRIMAT, provides `YHe` and `DH` as derived parameters |
 | `primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
-| `yaml/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
-| `yaml/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
+| `PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
+| `PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_mcmc_bbn.yaml` | — | Example run: BBN only |
 | `yaml/run_mcmc_bbn_class.yaml` | — | Example run: BBN + CLASS (CMB) |
 
@@ -43,9 +43,9 @@ primat_wrapper/
 ├── setup.py
 ├── primat_theory.py
 ├── primat_likelihood.py
+|-- PrimatTheory.yaml
+|-- PrimatLikelihood.yaml
 ├── yaml/
-│   ├── PrimatTheory.yaml
-│   ├── PrimatLikelihood.yaml
 │   ├── run_mcmc_bbn.yaml
 │   └── run_mcmc_bbn_class.yaml
 ├── PRIMAT2024/          ← PRIMAT code goes here
