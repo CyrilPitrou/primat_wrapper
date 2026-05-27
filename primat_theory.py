@@ -81,8 +81,8 @@ class PrimatTheory(Theory):
                 "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
                 "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
                 "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
-                "MathKernel",
                 "math13",
+                "MathKernel",
             ]
             for path in candidates:
                 if path == "MathKernel" or os.path.exists(path):
