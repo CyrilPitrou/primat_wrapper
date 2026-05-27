@@ -13,8 +13,8 @@ Gaussian likelihood against observed He-4 and D/H measurements.
 | `primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
 | `PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
 | `PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
-| `yaml/run_mcmc_bbn.yaml` | — | Example run: BBN only |
-| `yaml/run_mcmc_bbn_class.yaml` | — | Example run: BBN + CLASS (CMB) |
+| `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
+| `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and Nrelat = Neff-3.044 |
 
 ## Requirements
 
