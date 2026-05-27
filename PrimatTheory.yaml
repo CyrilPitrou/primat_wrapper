@@ -1,0 +1,10 @@
+# PrimatTheory.yaml
+# -----------------
+# Default parameters for PrimatTheory.
+# NOTE: simple options (PRIMAT_PATH, MathKernelCommand, etc.) are defined
+# as class attributes in primat_theory.py and must NOT be repeated here.
+# Only put here things that cannot be class attributes, i.e. the params block.
+
+params:
+  omegabh2:
+    latex: \Omega_b h^2

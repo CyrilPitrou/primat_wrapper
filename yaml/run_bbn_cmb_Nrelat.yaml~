@@ -1,0 +1,237 @@
+# run_bbn_class.yaml
+# ------------------
+# Cobaya run using both PrimatTheory (BBN abundances) and CLASS (CMB/LSS).
+#
+# Parameter flow
+# --------------
+#   omegabh2 ──► PrimatTheory ──► YHe ──► CLASS
+#                               └──► DH ──► PrimatLikelihood
+#   (+ all other CLASS params) ──► CLASS ──► [CMB likelihoods]
+#
+# YHe is the bridge: PRIMAT computes it from omegabh2 (and optionally
+# EDE/Nrelat), then CLASS uses it instead of its internal BBN table.
+# This enforces thermodynamic consistency between BBN and recombination.
+#
+# How CLASS receives YHe
+# ----------------------
+# YHe is declared in the global params block with no prior (= derived).
+# CLASS's Cobaya wrapper reads it as an input parameter because 'YHe'
+# is a recognised CLASS parameter name.  Cobaya wires this automatically:
+# it sees that CLASS requires YHe and that PrimatTheory provides it.
+
+# ── Theories ─────────────────────────────────────────────────────────────────
+theory:
+
+  # 1. PRIMAT: computes YHe and DH from omegabh2
+  primat_theory.PrimatTheory:
+    python_path: /nethome/pitrou/cobaya/primat_wrapper/
+    PRIMAT_PATH: "PRIMAT2024"
+    MathKernelCommand: "math13"
+    ReducedNetwork: True
+    Verbose: True
+    fEDE: 0. #No EDE
+    zcEDE: 1e8
+    wnEDE:  1.0
+    Nrelat: null #We sample on Nrelat
+    provides: [YHe, DH]  # override CLASS's internal BBN table
+
+  # 2. CLASS: uses YHe from PRIMAT instead of its internal BBN interpolation.
+  # We must explicitly list YHe under classy's own params block so that
+  # Cobaya's CLASS wrapper knows to fetch it from the provider and forward
+  # it to CLASS.  Without this, the wrapper never requests YHe and CLASS
+  # silently falls back to its internal BBN table.
+  classy:
+    params:
+      # Pull YHe from PrimatTheory's output and pass it into CLASS.
+      # 'derived: False' tells Cobaya this is an input to CLASS, not an
+      # output from it — this is what prevents CLASS from computing its own.
+      YHe:
+        derived: False
+      # omegabh2 must also reach CLASS so it gets omega_b
+      omegabh2:
+        derived: False
+      omegach2:
+        derived: False
+      A_s:
+        derived: False
+      n_s:
+        derived: False
+      tau_reio:
+        derived: False
+      H0:
+        derived: False
+      N_ur:
+        derived: False
+    path: /nethome/pitrou/class_tam
+    extra_args:
+      output: tCl,pCl,lCl,mPk
+      lensing: yes
+      non_linear: hmcode
+      N_ncdm: 1
+      m_ncdm: 0.06
+      T_ncdm: 0.71611
+#      N_ur: 2.0308
+      accurate_lensing: 0
+      recombination: hyrec #default
+#      l_max_scalars: 9001
+#      l_max_tensors = 1000
+      delta_l_max: 1000
+      #background_verbose: 3
+      #thermodynamics_verbose: 3
+
+# ── Likelihoods ──────────────────────────────────────────────────────────────
+likelihood:
+  # Planck 2018 likelihoods
+  planck_2018_lowl.TT:
+  planck_2018_lowl.EE:
+  planck_2018_highl_plik.TTTEEE_lite_native:
+  planck_2018_lensing.native:
+
+
+  # BBN likelihood: constrains omegabh2 via YHe and DH
+  primat_likelihood.PrimatLikelihood:
+    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_likelihood.py
+    YHe_mean:         0.2458
+    YHe_sigma:        0.0013
+    YHe_PRIMAT_sigma: 0.0001091146
+    DH_mean:          2.527e-5
+    DH_sigma:         0.030e-5
+    DH_PRIMAT_sigma:  2.754096e-7
+
+# ── Parameters ───────────────────────────────────────────────────────────────
+params:
+  # Primary cosmological parameters
+  H0:
+    prior:
+      min: 60
+      max: 80
+    ref:
+      dist: norm
+      loc: 67.5
+      scale: 2
+    proposal: 2
+    latex: H_0
+  Nrelat:
+    prior:
+      min: -2.0
+      max: 2.0
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.1
+    proposal: 0.05
+    latex: N_\mathrm{relat}
+    #drop: True
+  N_ur: 
+    value: "lambda Nrelat: 2.0308 + Nrelat"
+  omegabh2:
+    prior:
+      min: 0.019
+      max: 0.026
+    ref:
+      dist: norm
+      loc: 0.022425
+      scale: 0.0002
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  
+  omegach2:
+    prior:
+      min: 0.09
+      max: 0.15
+    ref:
+      dist: norm
+      loc: 0.1193
+      scale: 0.002
+    proposal: 0.001
+    latex: \Omega_\mathrm{c} h^2
+  
+  tau_reio:
+    prior:
+      min: 0.01
+      max: 0.15
+    ref:
+      dist: norm
+      loc: 0.055
+      scale: 0.01
+    proposal: 0.005
+    latex: \tau_\mathrm{reio}
+  
+  logA:
+    prior:
+      min: 2.7
+      max: 3.3
+    ref:
+      dist: norm
+      loc: 3.045
+      scale: 0.02
+    proposal: 0.01
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: True
+  
+  A_s:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  
+  n_s:
+    prior:
+      min: 0.92
+      max: 1.00
+    ref:
+      dist: norm
+      loc: 0.965
+      scale: 0.005
+    proposal: 0.003
+    latex: n_\mathrm{s}
+
+  # PrimatLikelihood reads both via get_requirements()/logp(YHe, DH, ...).
+
+  YHe:
+    latex: Y_p^\mathrm{BBN}
+
+  DH:
+    latex: ({\rm D/H})
+
+#  fEDE:
+#    prior:
+#      min: 0.
+#      max: 0.3
+#    ref:
+#      dist: norm
+#      loc:   0.06
+#      scale: 0.02
+#    proposal: 0.01
+#    latex: f_{\rm EDE}
+#  log10zcEDE:
+#    prior:
+#      min: 7.
+#      max: 10.
+#    ref:
+#      dist: norm
+#      loc:   8.
+#      scale: 0.2
+#    proposal: 0.2
+#    latex: \log_{10} (z_c^{\rm EDE})
+#    drop: True
+#  zcEDE: 
+#    value: "lambda log10zcEDE: 10**(log10zcEDE)"
+#    latex: z_c^{\rm EDE}
+
+# ── Sampler ──────────────────────────────────────────────────────────────────
+sampler:
+  mcmc:
+    max_samples: 100000
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    covmat: auto
+    drag: True
+    oversample_power: 0.4
+    proposal_scale: 2.4
+    output_every: 10s
+
+# ── Output ───────────────────────────────────────────────────────────────────
+#debug: True   # sets all components to DEBUG log level
+              # you will see every parameter value CLASS receives,
+              # and the YHe/DH that PRIMAT computes each step
+resume: True
+output: chains/bbn_cmb_Nrelat

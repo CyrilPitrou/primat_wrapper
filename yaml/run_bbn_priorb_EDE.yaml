@@ -1,0 +1,112 @@
+# run_bbn.yaml
+# ------------
+# Cobaya run configuration: PrimatTheory + PrimatLikelihood.
+#
+# Key design points
+# -----------------
+# • YHe and DH are declared in the global params block WITHOUT a prior.
+#   That is how Cobaya recognises them as derived parameters.
+# • PrimatTheory writes them into state["derived"] inside calculate().
+# • Cobaya automatically injects them as keyword arguments to logp().
+# • No output_params, no must_provide, no get_YHe/get_DH required.
+
+# ── Theory ───────────────────────────────────────────────────────────────────
+theory:
+  primat_theory.PrimatTheory:
+    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
+    PRIMAT_PATH: "PRIMAT2024"
+    MathKernelCommand: "math13"
+    ReducedNetwork: True
+    Verbose: False
+    fEDE:   null      # set to null to vary
+    zcEDE:  null    # set to null to vary
+    wnEDE:  1.0
+    Nrelat: 0.0      # set to null to vary
+
+# ── Likelihood ───────────────────────────────────────────────────────────────
+likelihood:
+  primat_likelihood.PrimatLikelihood:
+    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_likelihood.py
+    YHe_mean:         0.2458
+    YHe_sigma:        0.0013
+    YHe_PRIMAT_sigma: 0.0001091146
+    DH_mean:          2.527e-5
+    DH_sigma:         0.030e-5
+    DH_PRIMAT_sigma:  2.754096e-7
+
+# ── Parameters ───────────────────────────────────────────────────────────────
+params:
+
+  # Sampled parameter
+  omegabh2:
+    prior:
+      dist: norm
+      loc:   0.022425
+      scale: 0.000136
+    ref:
+      dist: norm
+      loc:   0.022425
+      scale: 0.0002
+    proposal: 0.0001
+    latex: \Omega_b h^2
+
+#  Nrelat:
+#    prior:
+#      min: -2.0
+#      max: 2.0
+#    ref:
+#      dist: norm
+#      loc: 0.0
+#      scale: 0.1
+#    proposal: 0.05
+#    latex: N_\mathrm{relat} 
+
+  # Derived parameters — NO prior block = Cobaya treats them as derived.
+  # PrimatTheory writes these into state["derived"]; Cobaya routes them
+  # to logp(YHe, DH, ...) automatically.
+  YHe:
+    latex: Y_p
+  DH:
+    latex: ({\rm D/H})
+
+  fEDE:
+    prior:
+      min: 0.
+      max: 0.3
+    ref:
+      dist: norm
+      loc:   0.06
+      scale: 0.02
+    proposal: 0.01
+    latex: f_{\rm EDE}
+  log10zcEDE:
+    prior:
+      min: 7.
+      max: 10.
+    ref:
+      dist: norm
+      loc:   8.
+      scale: 0.2
+    proposal: 0.2
+    latex: \log_{10} (z_c^{\rm EDE})
+    drop: True
+  zcEDE: 
+    value: "lambda log10zcEDE: 10**(log10zcEDE)"
+    latex: z_c^{\rm EDE}
+
+# ── Sampler ──────────────────────────────────────────────────────────────────
+# Sampler: MCMC
+sampler:
+  mcmc:
+    max_samples: 50000
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.0
+    learn_proposal_Rminus1_max_early: 30.0
+    output_every: 10s
+
+# ── Output ───────────────────────────────────────────────────────────────────
+output: chains/bbn_priorb_EDE
+resume: True
+debug: True
