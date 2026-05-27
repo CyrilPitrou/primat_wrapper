@@ -104,7 +104,7 @@ Then run with Cobaya:
 
 ```bash
 cobaya-run yaml/run_bbn.yaml
-# or, to also use CLASS for the CMB:
+# or, to also vary the effective number of relativistic degrees of freedom (wrt to standard value 3.044):
 cobaya-run yaml/run_bbn_Nrelat.yaml
 ```
 
@@ -159,4 +159,4 @@ files are used only to provide Cobaya with LaTeX labels for the derived paramete
 | `DH_PRIMAT_sigma` | `2.754096e-7` | PRIMAT theoretical uncertainty on D/H |
 
 Observational and theoretical uncertainties are added in quadrature.
-Nuclear reactions error are assumed not to depend on the baryon density (approximately correct if baryons density not far from standard one)
+Nuclear reactions errors are assumed not to depend on the baryon density (approximately correct if baryons density not far from standard one)
