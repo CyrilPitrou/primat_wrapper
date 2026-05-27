@@ -11,10 +11,10 @@ Gaussian likelihood against observed He-4 and D/H measurements.
 |---|---|---|
 | `primat_theory.py` | `PrimatTheory` | Runs PRIMAT, provides `YHe` and `DH` as derived parameters |
 | `primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
-| `PrimatTheory.yaml` | — | Default `params` block for `PrimatTheory` |
-| `PrimatLikelihood.yaml` | — | Default `params` block for `PrimatLikelihood` |
-| `run_bbn.yaml` | — | Example run: BBN only |
-| `run_bbn_class.yaml` | — | Example run: BBN + CLASS (CMB) |
+| `yaml/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
+| `yaml/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
+| `yaml/run_mcmc_bbn.yaml` | — | Example run: BBN only |
+| `yaml/run_mcmc_bbn_class.yaml` | — | Example run: BBN + CLASS (CMB) |
 
 ## Requirements
 
@@ -43,10 +43,11 @@ primat_wrapper/
 ├── setup.py
 ├── primat_theory.py
 ├── primat_likelihood.py
-├── PrimatTheory.yaml
-├── PrimatLikelihood.yaml
-├── run_bbn.yaml
-├── run_bbn_class.yaml
+├── yaml/
+│   ├── PrimatTheory.yaml
+│   ├── PrimatLikelihood.yaml
+│   ├── run_mcmc_bbn.yaml
+│   └── run_mcmc_bbn_class.yaml
 ├── PRIMAT2024/          ← PRIMAT code goes here
 │   └── PythonInterface/
 │       └── PyPRIMAT_FinalAbundances.m
@@ -62,8 +63,8 @@ cd primat_wrapper/
 pip install -e .
 ```
 
-The `-e` flag installs in *editable* mode, meaning changes to the `.py` and `.yaml`
-files take effect immediately without reinstalling.
+The `-e` flag installs in *editable* mode, meaning changes to the `.py` files
+take effect immediately without reinstalling.
 
 If your Python installation is externally managed (e.g. on macOS with Homebrew),
 add `--break-system-packages`:
@@ -78,15 +79,12 @@ pip install -e . --break-system-packages
 python3 -c "
 import inspect, pprint
 from primat_wrapper.primat_theory import PrimatTheory
-print('package    :', inspect.getmodule(PrimatTheory).__package__)
-print('yaml file  :', PrimatTheory.get_yaml_file())
-print('defaults   :')
+print('package :', inspect.getmodule(PrimatTheory).__package__)
 pprint.pprint(PrimatTheory.get_defaults())
 "
 ```
 
-You should see `package: primat_wrapper` and the `params` block from
-`PrimatTheory.yaml` in the defaults.
+You should see `package: primat_wrapper` and a non-empty defaults dict.
 
 ## Running
 
@@ -95,8 +93,8 @@ Reference the classes using their fully-qualified module names:
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    PRIMAT_PATH: "PRIMAT2024"          # relative to package dir, or absolute
-    MathKernelCommand: ""              # leave empty for auto-detection
+    PRIMAT_PATH: "PRIMAT2024"     # relative to package dir, or absolute
+    MathKernelCommand: ""         # leave empty for auto-detection
     Verbose: False
 
 likelihood:
@@ -106,9 +104,9 @@ likelihood:
 Then run with Cobaya:
 
 ```bash
-cobaya-run run_bbn.yaml
-# or
-cobaya-run run_bbn_class.yaml
+cobaya-run yaml/run_mcmc_bbn.yaml
+# or, to also use CLASS for the CMB:
+cobaya-run yaml/run_mcmc_bbn_class.yaml
 ```
 
 ### MathKernel auto-detection
@@ -127,12 +125,17 @@ To override, set `MathKernelCommand` explicitly in your run YAML:
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    MathKernelCommand: "/usr/local/bin/math13"
+    MathKernelCommand: "math13"
 ```
 
 ## Configuration reference
 
-### PrimatTheory
+All options are set as class attributes in the Python files and can be overridden
+in your run YAML. The `yaml/PrimatTheory.yaml` and `yaml/PrimatLikelihood.yaml`
+files are used only to provide Cobaya with LaTeX labels for the derived parameters
+`YHe` and `DH`; all numerical defaults live in the Python source.
+
+### PrimatTheory options
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -145,7 +148,7 @@ theory:
 | `zcEDE` | `1e8` | EDE critical redshift (`null` to vary) |
 | `wnEDE` | `1.0` | EDE equation-of-state parameter |
 
-### PrimatLikelihood
+### PrimatLikelihood options
 
 | Parameter | Default | Description |
 |---|---|---|
