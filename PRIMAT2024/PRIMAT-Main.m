@@ -309,9 +309,9 @@ YSZ=0.;
 
 (* ::Input::Initialization:: *)
 $EDEBool = True;
-wnEDE=1;
+wnEDE=1.;
 zcEDE=10^(8);
-fEDE=0.1;
+fEDE=0.;
 
 acEDE := 1/(1+zcEDE)
 
@@ -1233,9 +1233,9 @@ InvertaOFT:=(Tofa=Interpolation@Table[{a[T],T},{T,ListT}];);
 
 (* ::Input::Initialization:: *)
 aEDEmax :=acEDE (4/(3 wnEDE-1))^(1/(3(1+wnEDE)))
-\[Rho]radac:=aBB (kB Tv)^4 (1+D\[Rho]T[Tv])+\[Rho]\[Nu][Tv]+\[Rho]\[Nu]Relat[Tv]/.Tv->Tofa[aEDEmax]
+\[Rho]radamax:=aBB (kB Tv)^4 (1+D\[Rho]T[Tv])+\[Rho]\[Nu][Tv]+\[Rho]\[Nu]Relat[Tv]/.Tv->Tofa[aEDEmax]
 (*\[Rho]radac:=(Subscript[\[CapitalOmega], \[Nu]0]+Subscript[\[CapitalOmega], \[Gamma]0])Subscript[\[Rho], crit]/aEDEmax^4*)
-\[Rho]EDEac:=fEDE/(1-fEDE)\[Rho]radac/2(1+4/(3wnEDE-1))
+\[Rho]EDEac:=fEDE/(1-fEDE)\[Rho]radamax/2(1+4/(3wnEDE-1))
 \[Rho]EDE[av_]:=2\[Rho]EDEac/(1+(av/acEDE)^(3(1+wnEDE)))
 
 
@@ -1393,7 +1393,7 @@ I\[Lambda]FM[pe_]:=With[{en=Sqrt[pe^2+1]},With[{b=pe/en},pe^2*
 
 
 (* ::Input::Initialization:: *)
-MixingCosAngle=0.97420;(*  0.97420(+-16) from PDG2017 (The review onf Vud Vus of the PDG 2017).*)
+MixingCosAngle=0.97420;(*  0.97420(+-16) from PDG2017 (The review on Vud Vus of the PDG 2017).*)
 (*The value from PDG2020 review on Vud Vus is 0.97370(+-20) but this brings tension on the unitarity of the CKM matrix. Hence we stick to the previous value. This is only used to check if one recovers from theory the neutrino lifetime.*)
 MyK:=MyK=MixingCosAngle^2 (GF)^2 (1+3(gA)^2)me^5/(2\[Pi]^3 hbar)
 
