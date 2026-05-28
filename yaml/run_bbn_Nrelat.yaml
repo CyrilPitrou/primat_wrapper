@@ -14,7 +14,7 @@
 theory:
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
-    PRIMAT_PATH: "PRIMAT2024"
+    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False

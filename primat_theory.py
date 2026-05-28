@@ -64,7 +64,7 @@ class PrimatTheory(Theory):
 
         base = os.path.dirname(os.path.abspath(__file__))
         if not self.PRIMAT_PATH:
-            self.PRIMAT_PATH = os.path.join(base, "PRIMAT2024")
+            self.PRIMAT_PATH = os.path.join(base, "PRIMAT")
         elif not os.path.isabs(self.PRIMAT_PATH):
             self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
 

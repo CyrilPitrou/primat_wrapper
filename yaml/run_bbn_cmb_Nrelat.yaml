@@ -25,7 +25,7 @@ theory:
   # 1. PRIMAT: computes YHe and DH from omegabh2
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/
-    PRIMAT_PATH: "PRIMAT2024"
+    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: True
