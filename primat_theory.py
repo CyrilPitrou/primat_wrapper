@@ -25,6 +25,8 @@ import os
 import subprocess
 import csv
 import tempfile
+import time
+import shutil
 
 
 class PrimatTheory(Theory):
@@ -45,10 +47,13 @@ class PrimatTheory(Theory):
     # Class-level attributes — overridden by YAML values automatically   #
     # ------------------------------------------------------------------ #
     PRIMAT_PATH: str = ""
-    MathKernelCommand: str = ""
+    PyPRIMAT_PATH: str = ""
+    BBN_solver: str = "PRIMAT"  # or "PyPRIMAT"  
+    MathKernelCommand: str = "" # path to MathKernel executable; auto-detected if empty
     ReducedNetwork: bool = True
     Nrelat: float = 0.0      # set to None to vary via sampler
     Verbose: bool = False
+
 
     # Early Dark Energy
     fEDE:  float = 0.0       # set to None to vary via sampler
@@ -63,39 +68,84 @@ class PrimatTheory(Theory):
         """Resolve paths and sanity-check the PRIMAT installation."""
 
         base = os.path.dirname(os.path.abspath(__file__))
-        if not self.PRIMAT_PATH:
-            self.PRIMAT_PATH = os.path.join(base, "PRIMAT")
-        elif not os.path.isabs(self.PRIMAT_PATH):
-            self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
+        if self.BBN_solver == "PRIMAT":
+            self.log.info("Attempting to use PRIMAT as BBN solver.")
+            #We set the PRIMAT_PATH to the default location  if not set, and make it absolute if it is relative
+            
+            if not self.PRIMAT_PATH:
+                self.PRIMAT_PATH = os.path.join(base, "PRIMAT")
+            elif not os.path.isabs(self.PRIMAT_PATH):
+                self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
 
-        self.primat_script = os.path.join(
-            self.PRIMAT_PATH, "PythonInterface", "PyPRIMAT_FinalAbundances.m"
-        )
-        if not os.path.exists(self.primat_script):
-            raise FileNotFoundError(
-                f"PRIMAT script not found at {self.primat_script}"
+            self.primat_script = os.path.join(
+                self.PRIMAT_PATH, "PythonInterface", "PyPRIMAT_FinalAbundances.m"
             )
+            if not os.path.exists(self.primat_script):
+                print(f"PRIMAT script not found at {self.primat_script}")
+                self.BBN_solver = "PyPRIMAT"
+                self.log.warning("Falling back to PyPRIMAT as BBN solver.")
 
-        if not self.MathKernelCommand:
-            candidates = [
-                "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
-                "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
-                "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
-                "math13",
-                "MathKernel",
-            ]
-            for path in candidates:
-                if path == "MathKernel" or os.path.exists(path):
-                    self.MathKernelCommand = path
-                    break
+            
+            def is_valid_mathkernel(cmd):
+                if not os.path.exists(cmd) or not os.access(cmd, os.X_OK):
+                    return False
+                try:
+                    result = subprocess.run([cmd, '-version'], capture_output=True, text=True, timeout=10)
+                    out = (result.stdout or '') + (result.stderr or '')
+                    return (result.returncode == 0 and ("Mathematica" in out or "MathKernel" in out))
+                except Exception:
+                    return False
+
             if not self.MathKernelCommand:
-                raise EnvironmentError(
-                    "MathKernel not found. Set MathKernelCommand in PrimatTheory.yaml."
-                )
+                candidates = [
+                    "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
+                    "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
+                    "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
+                    "math13",
+                    "MathKernel",
+                ]
+                for path in candidates:
+                    if path == "MathKernel":
+                        # Try to find MathKernel in PATH
+                        mk = shutil.which("MathKernel")
+                        if mk and is_valid_mathkernel(mk):
+                            self.MathKernelCommand = mk
+                            break
+                    elif os.path.exists(path) and is_valid_mathkernel(path):
+                        self.MathKernelCommand = path
+                        break
+            else:
+                # User provided a path, validate it
+                if not is_valid_mathkernel(self.MathKernelCommand):
+                    print(f"MathKernelCommand '{self.MathKernelCommand}' is not a valid MathKernel executable. Falling back to PyPRIMAT.")
+                    self.BBN_solver = "PyPRIMAT"
+                    self.MathKernelCommand = ""
 
-        self.log.info("PrimatTheory initialised.")
-        self.log.info(f"  PRIMAT script : {self.primat_script}")
-        self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
+            #if not self.MathKernelCommand:
+            #    print("MathKernel not found. Falling back to PyPRIMAT.")
+            #    self.BBN_solver = "PyPRIMAT"
+
+        if self.BBN_solver == "PyPRIMAT":       
+            #We now do the same for the PyPRIMAT PATH
+            if not self.PyPRIMAT_PATH:
+                self.PyPRIMAT_PATH = os.path.join(base, "PyPRIMAT")
+            elif not os.path.isabs(self.PyPRIMAT_PATH):
+                self.PyPRIMAT_PATH = os.path.join(base, self.PyPRIMAT_PATH)
+
+            self.pyprimat_script = os.path.join(
+                self.PyPRIMAT_PATH, "PyPRIMAT_FinalAbundances.py"
+            )
+            if not os.path.exists(self.pyprimat_script):
+                #print(f"PyPRIMAT script not found at {self.pyprimat_script}")
+                raise FileNotFoundError(
+                    f"PyPRIMAT script not found at {self.pyprimat_script}"
+                )
+        if self.BBN_solver == "PRIMAT":
+            self.log.info("PrimatTheory initialised.")
+            self.log.info(f"  PRIMAT script : {self.primat_script}")
+            self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
+        if self.BBN_solver == "PyPRIMAT":
+            self.log.info(f"  PyPRIMAT script : {self.pyprimat_script}")
 
     def get_requirements(self):
         """
@@ -118,6 +168,7 @@ class PrimatTheory(Theory):
         in state["derived"] so Cobaya routes them to the likelihood and
         writes them to the chain.
         """
+        start_time = time.time()
         omegabh2 = self.provider.get_param("omegabh2")
 
         fEDE   = self.fEDE   if self.fEDE   is not None else self.provider.get_param("fEDE")
@@ -125,8 +176,14 @@ class PrimatTheory(Theory):
         Nrelat = self.Nrelat if self.Nrelat is not None else self.provider.get_param("Nrelat")
         wnEDE  = self.wnEDE if self.wnEDE is not None else self.provider.get_param("wnEDE")
 
-        results = self._run_primat(omegabh2, Nrelat=Nrelat,
-                                   fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
+        print('--- Running BBN code --- with ','omegabh2 =', omegabh2, 'Nrelat =', Nrelat, 'fEDE =', fEDE, 'zcEDE =', zcEDE, 'wnEDE =', wnEDE)
+
+        if self.BBN_solver == "PRIMAT":
+            results = self._run_bbn_primat(omegabh2, Nrelat=Nrelat,
+                                       fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
+        elif self.BBN_solver == "PyPRIMAT":
+            results = self._run_bbn_pyprimat(omegabh2, Nrelat=Nrelat,
+                                         fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
 
         # Always populate state["derived"] — use NaN on failure so the
         # likelihood can detect it and return -inf cleanly.
@@ -152,6 +209,7 @@ class PrimatTheory(Theory):
                 f"PRIMAT result: omegabh2={omegabh2:.8f} → YHe={YHe:.8f}  D/H={DH:.6e}"
             )
 
+        print("--- BBN code running time: %s seconds ---" % (time.time() - start_time))
         return True
 
     # ------------------------------------------------------------------ #
@@ -165,7 +223,7 @@ class PrimatTheory(Theory):
             return "True" if value else "False"
         return str(value)
 
-    def _run_primat(self, omegabh2, Nrelat=0.0,
+    def _run_bbn_primat(self, omegabh2, Nrelat=0.0,
                     fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """
         Invoke PRIMAT via MathKernel and return a dict of abundances,
@@ -251,6 +309,30 @@ class PrimatTheory(Theory):
             if os.path.exists(output_file):
                 os.remove(output_file)
 
+    def _run_bbn_pyprimat(self, omegabh2,   Nrelat=0.0,
+                    fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
+
+        """
+        Invoke PyPRIMAT as a Python module and return a dict of abundances,
+        or None on failure.
+        """
+        import sys
+        if self.PyPRIMAT_PATH not in sys.path:
+            sys.path.insert(0, self.PyPRIMAT_PATH)
+        try:
+            from PyPRIMAT_FinalAbundances import compute_abundances
+            YP, DH = compute_abundances(
+                omegabh2=omegabh2,
+                fEDE=fEDE,
+                zcEDE=zcEDE,
+                wnEDE=wnEDE
+            )
+            return {"YHe": YP, "DH": DH}
+        except Exception as e:
+            self.log.error(f"Error running compute_abundances: {e}")
+            return None
+
+    
     @staticmethod
     def _extract_YHe(results):
         """Return Yp (He-4 mass fraction) from PRIMAT output dict."""
