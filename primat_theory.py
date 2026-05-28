@@ -65,7 +65,6 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     def initialize(self):
-        """Resolve paths and sanity-check the PRIMAT installation."""
 
         base = os.path.dirname(os.path.abspath(__file__))
         if self.BBN_solver == "PRIMAT":
@@ -87,13 +86,23 @@ class PrimatTheory(Theory):
 
             
             def is_valid_mathkernel(cmd):
-                if not os.path.exists(cmd) or not os.access(cmd, os.X_OK):
+                # If not an absolute path, try to resolve in PATH
+                resolved = cmd
+                if not os.path.isabs(cmd):
+                    found = shutil.which(cmd)
+                    if not found:
+                        return False
+                    resolved = found
+                if not os.path.exists(resolved) or not os.access(resolved, os.X_OK):
                     return False
                 try:
-                    result = subprocess.run([cmd, '-version'], capture_output=True, text=True, timeout=10)
+                    result = subprocess.run([resolved, '-version'], capture_output=True, text=True, timeout=10)
                     out = (result.stdout or '') + (result.stderr or '')
-                    return (result.returncode == 0 and ("Mathematica" in out or "MathKernel" in out))
-                except Exception:
+                    # Accept if output contains 'Mathematica', 'MathKernel', or a version string like 'for Linux' or 'for Darwin'
+                    valid = ( result.returncode == 0 )
+                    return valid
+                except Exception as e:
+                    #print(f"[DEBUG] is_valid_mathkernel: Exception: {e}")
                     return False
 
             if not self.MathKernelCommand:
@@ -105,15 +114,16 @@ class PrimatTheory(Theory):
                     "MathKernel",
                 ]
                 for path in candidates:
-                    if path == "MathKernel":
-                        # Try to find MathKernel in PATH
-                        mk = shutil.which("MathKernel")
-                        if mk and is_valid_mathkernel(mk):
-                            self.MathKernelCommand = mk
+                    if os.path.isabs(path):
+                        if os.path.exists(path) and is_valid_mathkernel(path):
+                            self.MathKernelCommand = path
                             break
-                    elif os.path.exists(path) and is_valid_mathkernel(path):
-                        self.MathKernelCommand = path
-                        break
+                    else:
+                        resolved = shutil.which(path)
+                        #print(f"[DEBUG] candidate '{path}' resolved to '{resolved}'")
+                        if resolved and is_valid_mathkernel(resolved):
+                            self.MathKernelCommand = resolved
+                            break
             else:
                 # User provided a path, validate it
                 if not is_valid_mathkernel(self.MathKernelCommand):
@@ -176,7 +186,7 @@ class PrimatTheory(Theory):
         Nrelat = self.Nrelat if self.Nrelat is not None else self.provider.get_param("Nrelat")
         wnEDE  = self.wnEDE if self.wnEDE is not None else self.provider.get_param("wnEDE")
 
-        print('--- Running BBN code --- with ','omegabh2 =', omegabh2, 'Nrelat =', Nrelat, 'fEDE =', fEDE, 'zcEDE =', zcEDE, 'wnEDE =', wnEDE)
+        print(f'--- Running BBN code {self.BBN_solver} --- with omegabh2 = {omegabh2}, Nrelat = {Nrelat}, fEDE = {fEDE}, zcEDE = {zcEDE}, wnEDE = {wnEDE}')
 
         if self.BBN_solver == "PRIMAT":
             results = self._run_bbn_primat(omegabh2, Nrelat=Nrelat,
