@@ -1,30 +1,32 @@
 # primat_wrapper
 
 A [Cobaya](https://cobaya.readthedocs.io) theory+likelihood package that computes
-primordial nucleosynthesis abundances by calling the Mathematica
-[PRIMAT](https://www2.iap.fr/users/pitrou/primat.htm) code, and evaluates a
-Gaussian likelihood against observed He-4 and D/H measurements.
+primordial nucleosynthesis abundances by calling either the Mathematica
+[PRIMAT](https://www2.iap.fr/users/pitrou/primat.htm) code or the pure-Python
+PyPRIMAT code, and evaluates a Gaussian likelihood against observed He-4 and D/H
+measurements.
 
 ## Components
 
 | File | Cobaya class | Role |
 |---|---|---|
-| `primat_theory.py` | `PrimatTheory` | Runs PRIMAT, provides `YHe` and `DH` as derived parameters |
+| `primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
 | `primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
 | `PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
 | `PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
-| `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and Nrelat = Neff-3.044 |
+| `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and Nrelat = Neff − 3.044 |
 
 ## Requirements
 
 - Python ≥ 3.10
 - [Cobaya](https://cobaya.readthedocs.io) ≥ 3.5
-- Mathematica / Wolfram Engine with a working kernel command
-  (`MathKernel`, `math13`, etc.)
-- The [PRIMAT2024](https://www2.iap.fr/users/pitrou/primat.htm) code,
-  placed in a folder called `PRIMAT2024/` inside the package directory
-  (or pointed to by `PRIMAT_PATH` in your run YAML)
+- Either:
+  - Mathematica / Wolfram Engine with a working kernel command
+    (`MathKernel`, `math13`, etc.) and the
+    [PRIMAT2024](https://www2.iap.fr/users/pitrou/primat.htm) code; or
+  - The pure-Python PyPRIMAT code (used automatically as a fallback if
+    no MathKernel is found)
 
 ## Installation
 
@@ -43,13 +45,17 @@ primat_wrapper/
 ├── setup.py
 ├── primat_theory.py
 ├── primat_likelihood.py
-|-- PrimatTheory.yaml
-|-- PrimatLikelihood.yaml
+├── PrimatTheory.yaml
+├── PrimatLikelihood.yaml
 ├── yaml/
-│   └── run_bbn_*.yaml
-├── PRIMAT2024/          ← PRIMAT code goes here
+│   ├── run_bbn.yaml              ← BBN only (baryons)
+│   ├── run_bbn_Nrelat.yaml       ← BBN + varying Nrelat
+│   └── ...                       ← other example run files
+├── PRIMAT/                        ← PRIMAT code goes here
 │   └── PythonInterface/
 │       └── PyPRIMAT_FinalAbundances.m
+├── PyPRIMAT/                      ← PyPRIMAT code goes here (fallback)
+│   └── PyPRIMAT_FinalAbundances.py
 └── README.md
 ```
 
@@ -92,21 +98,35 @@ Reference the classes using their fully-qualified module names:
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    PRIMAT_PATH: "PRIMAT2024"     # relative to package dir, or absolute
-    MathKernelCommand: ""         # leave empty for auto-detection
+    BBN_solver: "PRIMAT"      # or "PyPRIMAT" to force the Python fallback
+    PRIMAT_PATH: "PRIMAT"     # relative to package dir, or absolute
+    MathKernelCommand: ""     # leave empty for auto-detection
     Verbose: False
 
 likelihood:
   primat_wrapper.primat_likelihood.PrimatLikelihood:
 ```
 
-Then run with Cobaya:
+Then run with Cobaya using one of the example YAML files in the `yaml/` folder:
 
 ```bash
 cobaya-run yaml/run_bbn.yaml
-# or, to also vary the effective number of relativistic degrees of freedom (wrt to standard value 3.044):
+# or, to also vary the effective number of relativistic degrees of freedom:
 cobaya-run yaml/run_bbn_Nrelat.yaml
 ```
+
+The `yaml/` folder contains several ready-to-use Cobaya run files. Each file
+specifies the sampled parameters, priors, and likelihoods for a particular
+analysis. Copy and modify one to suit your needs.
+
+### BBN solver selection
+
+`PrimatTheory` supports two BBN solvers, controlled by the `BBN_solver` option:
+
+- **`PRIMAT`** (default): calls the Mathematica PRIMAT code via MathKernel.
+  Requires a Mathematica / Wolfram Engine installation and the PRIMAT2024 code.
+- **`PyPRIMAT`**: calls a pure-Python implementation. No Mathematica needed.
+  Used automatically as a fallback if no valid MathKernel is found.
 
 ### MathKernel auto-detection
 
@@ -119,33 +139,37 @@ following commands in order:
 4. `math13` (some HPC clusters)
 5. `MathKernel` (any system where it is on `PATH`)
 
+If none is found, `PrimatTheory` automatically falls back to PyPRIMAT.
+
 To override, set `MathKernelCommand` explicitly in your run YAML:
 
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    MathKernelCommand: "/pathtoyourMathKernel"
+    MathKernelCommand: "/path/to/your/MathKernel"
 ```
 
 ## Configuration reference
 
 All options are set as class attributes in the Python files and can be overridden
-in your run YAML. The `yaml/PrimatTheory.yaml` and `yaml/PrimatLikelihood.yaml`
-files are used only to provide Cobaya with LaTeX labels for the derived parameters
-`YHe` and `DH`; all numerical defaults live in the Python source.
+in your run YAML. The `PrimatTheory.yaml` and `PrimatLikelihood.yaml` files are
+used only to provide Cobaya with LaTeX labels for the derived parameters `YHe`
+and `DH`; all numerical defaults live in the Python source.
 
 ### PrimatTheory options
 
 | Parameter | Default | Description |
 |---|---|---|
-| `PRIMAT_PATH` | `"PRIMAT2024"` | Path to PRIMAT2024 directory |
+| `BBN_solver` | `"PRIMAT"` | BBN solver to use: `"PRIMAT"` or `"PyPRIMAT"` |
+| `PRIMAT_PATH` | `"PRIMAT"` | Path to PRIMAT directory (relative or absolute) |
+| `PyPRIMAT_PATH` | `"PyPRIMAT"` | Path to PyPRIMAT directory (relative or absolute) |
 | `MathKernelCommand` | `""` | Mathematica kernel command (auto-detected if empty) |
 | `ReducedNetwork` | `True` | Use reduced nuclear network (faster, recommended for MCMC) |
 | `Nrelat` | `0.0` | Extra relativistic species beyond SM (`null` to vary) |
-| `Verbose` | `False` | Print PRIMAT inputs/outputs each step |
+| `Verbose` | `False` | Log BBN inputs and outputs each step |
 | `fEDE` | `0.0` | Early Dark Energy fraction (`null` to vary) |
 | `zcEDE` | `1e8` | EDE critical redshift (`null` to vary) |
-| `wnEDE` | `1.0` | EDE equation-of-state parameter |
+| `wnEDE` | `1.0` | EDE equation-of-state parameter (`null` to vary) |
 
 ### PrimatLikelihood options
 
@@ -159,4 +183,5 @@ files are used only to provide Cobaya with LaTeX labels for the derived paramete
 | `DH_PRIMAT_sigma` | `2.754096e-7` | PRIMAT theoretical uncertainty on D/H |
 
 Observational and theoretical uncertainties are added in quadrature.
-Nuclear reactions errors are assumed not to depend on the baryon density (approximately correct if baryons density not far from standard one)
+Nuclear reaction errors are assumed not to depend on the baryon density
+(approximately correct if the baryon density is not far from the standard value).
