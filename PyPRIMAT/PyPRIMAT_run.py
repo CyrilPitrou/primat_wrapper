@@ -11,9 +11,12 @@ PyPRini.smallnet_flag = True
 start_time = time.time()
 
 PyPRini.verbose_flag = True
+PyPRini.debug_flag = True
 PyPRini.aTid_flag = True
+PyPRini.sampling_nTOp = 50 
+PyPRini.sampling_nTOp_thermal = 50
 PyPRini.compute_bckg_flag = True #True is slower but more accurate since expansion is modified by EDE
-PyPRini.compute_nTOp_flag = False #True is slower and we do not modify the rates with EDE. But we should be careful in general.
+PyPRini.compute_nTOp_flag = True #True is slower and we do not modify the rates with EDE. But we should be careful in general.
 PyPRini.compute_nTOp_thermal_flag = False
 PyPRini.save_bckg_flag = False #Only the first time True is needed
 PyPRini.save_nTOp_flag = False #Only the first time True is needed

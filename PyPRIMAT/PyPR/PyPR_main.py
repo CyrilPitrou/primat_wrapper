@@ -458,7 +458,8 @@ class PyPRclass(object):
         Ya_i = YA("a",Yn_i,Yp_i,PyPRini.T_weak)
         YLi7_i = YA("Li7",Yn_i,Yp_i,PyPRini.T_weak)
         YBe7_i = YA("Be7",Yn_i,Yp_i,PyPRini.T_weak)
-        #print(" Initial conditions at MT are ",Yn_i,Yp_i,Yd_i,Yt_i,YHe3_i,Ya_i,YLi7_i,YBe7_i)
+        if (PyPRini.debug_flag):
+            print(" Initial conditions at MT are ",Yn_i,Yp_i,Yd_i,Yt_i,YHe3_i,Ya_i,YLi7_i,YBe7_i)
         if(PyPRini.smallnet_flag == False):
             YHe6_i = YA("He6",Yn_i,Yp_i,PyPRini.T_weak)
             YLi8_i = YA("Li8",Yn_i,Yp_i,PyPRini.T_weak)
@@ -478,7 +479,8 @@ class PyPRclass(object):
         if(PyPRini.verbose_flag):
             print("--- running time: %s seconds ---" % (time.time() - start_time))
             print(" ")
-            #print(" Middle range end Yn Yp Yd Yt YHe3 Ya YLi7 YBe7",Yn_MT_f,Yp_MT_f,Yd_MT_f,Yt_MT_f,YHe3_MT_f,Ya_MT_f,YLi7_MT_f,YBe7_MT_f)
+            if (PyPRini.debug_flag):
+                print(" Middle range end Yn Yp Yd Yt YHe3 Ya YLi7 YBe7",Yn_MT_f,Yp_MT_f,Yd_MT_f,Yt_MT_f,YHe3_MT_f,Ya_MT_f,YLi7_MT_f,YBe7_MT_f)
         
         ############################
         # Low temperature solution #
@@ -513,12 +515,15 @@ class PyPRclass(object):
             
         if(PyPRini.smallnet_flag):
             Yi_vec = [Yn_i,Yp_i,Yd_i,Yt_i,YHe3_i,Ya_i,YLi7_i,YBe7_i]
-            sol_at_LT = solve_ivp(Y_prime,[t_init,t_fin],Yi_vec,method='BDF',jac=Jacobian,atol=1.e-11)
+            sol_at_LT = solve_ivp(Y_prime,[t_init,t_fin],Yi_vec,method='BDF',jac=Jacobian,atol=1.e-11,rtol=1.e-6)
             Yn_f,Yp_f,Yd_f,Yt_f,YHe3_f,Ya_f,YLi7_f,YBe7_f = sol_at_LT.y[0][-1],sol_at_LT.y[1][-1],sol_at_LT.y[2][-1],sol_at_LT.y[3][-1],sol_at_LT.y[4][-1],sol_at_LT.y[5][-1],sol_at_LT.y[6][-1],sol_at_LT.y[7][-1]
         else:
             Yi_vec = [Yn_i,Yp_i,Yd_i,Yt_i,YHe3_i,Ya_i,YLi7_i,YBe7_i,YHe6_i,YLi8_i,YLi6_i,YB8_i]
-            sol_at_LT = solve_ivp(Y_prime_LT,[t_init,t_fin],Yi_vec,method='BDF',jac=Jacobian_LT,atol=1.e-15)
+            sol_at_LT = solve_ivp(Y_prime_LT,[t_init,t_fin],Yi_vec,method='BDF',jac=Jacobian_LT,atol=1.e-15,rtol=1.e-6)
             Yn_f,Yp_f,Yd_f,Yt_f,YHe3_f,Ya_f,YLi7_f,YBe7_f,YHe6_f,YLi8_f,YLi6_f,YB8_f = sol_at_LT.y[0][-1],sol_at_LT.y[1][-1],sol_at_LT.y[2][-1],sol_at_LT.y[3][-1],sol_at_LT.y[4][-1],sol_at_LT.y[5][-1],sol_at_LT.y[6][-1],sol_at_LT.y[7][-1],sol_at_LT.y[8][-1],sol_at_LT.y[9][-1],sol_at_LT.y[10][-1],sol_at_LT.y[11][-1]
+
+        if (PyPRini.debug_flag):
+            print(" Low range end Yn Yp Yd Yt YHe3 Ya YLi7 YBe7",Yn_f,Yp_f,Yd_f,Yt_f,YHe3_f,Ya_f,YLi7_f,YBe7_f)
 
         if(PyPRini.verbose_flag):
             print("--- running time: %s seconds ---" % (time.time() - start_time))
