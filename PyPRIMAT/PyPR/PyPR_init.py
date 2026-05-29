@@ -7,6 +7,11 @@ from scipy.special import zeta
 # Set working directory #
 #########################
 working_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+#########################
+# Set general flags     #
+#########################
 # Set flag to True for verbose mode
 verbose_flag = False
 # Set flag to True if Numba is installed

@@ -561,7 +561,15 @@ class PyPRclass(object):
         # Primordial lithium-7 abundance as relative number density to hydrogen x 10^10
         self.Li7oHx1e10_f = (YLi7_f+YBe7_f)/Yp_f*1e+10 # includes decay of beryllium-7
         # PRymordial output
-        self.res = np.array([self.Neff_f,self.Omeganurel_f,self.OneOverOmeganunr_f,self.YPCMB_f,self.YPBBN_f,self.DoHx1e5_f,self.He3oHx1e5_f,self.Li7oHx1e10_f])
+        self.res = {"Neff": self.Neff_f, 
+                    "Omeganurel": self.Omeganurel_f, 
+                    "OneOverOmeganunr": self.OneOverOmeganunr_f, 
+                    "YPCMB": self.YPCMB_f, 
+                    "YPBBN": self.YPBBN_f, 
+                    "DoHx1e5": self.DoHx1e5_f, 
+                    "He3oHx1e5": self.He3oHx1e5_f, 
+                    "Li7oHx1e10": self.Li7oHx1e10_f}
+        #self.res = np.array([self.Neff_f,self.Omeganurel_f,self.OneOverOmeganunr_f,self.YPCMB_f,self.YPBBN_f,self.DoHx1e5_f,self.He3oHx1e5_f,self.Li7oHx1e10_f])
         
     def PyPRresults(self):
         return self.res

@@ -316,13 +316,13 @@ class PrimatTheory(Theory):
             sys.path.insert(0, self.PyPRIMAT_PATH)
         try:
             from PyPRIMAT_FinalAbundances import compute_abundances
-            YP, DH = compute_abundances(
+            results = compute_abundances(
                 omegabh2=omegabh2,
                 fEDE=fEDE,
                 zcEDE=zcEDE,
                 wnEDE=wnEDE,
             )
-            return {"YHe": YP, "DH": DH}
+            return {"YHe": results['YPBBN'], "DH": results['DoHx1e5'] * 1e-5}
         except Exception as e:
             self.log.error(f"PyPRIMAT failed: {e}")
             return None

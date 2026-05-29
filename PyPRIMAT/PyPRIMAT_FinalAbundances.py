@@ -27,7 +27,7 @@ def compute_abundances(omegabh2=0.022425, Nrelat=0.0, fEDE=0., zcEDE=1e8, wnEDE=
         return 0 #If we do this the only change is in Hubble factor, as we want.
 
     # Set PyPR flags and parameters
-    PyPRini.verbose = True
+    PyPRini.verbose_flag = False
     PyPRini.aTid_flag = True
     PyPRini.compute_bckg_flag = True #True is slower but more accurate since expansion is modified by EDE
     PyPRini.compute_nTOp_flag = False #True is slower and we do not modify the rates with EDE. But we should be careful in general.
@@ -45,7 +45,7 @@ def compute_abundances(omegabh2=0.022425, Nrelat=0.0, fEDE=0., zcEDE=1e8, wnEDE=
     # Run PyPR with EDE
     PyPREDE = PyPRmain.PyPRclass(rho_NP, p_NP, drho_NP_dT)
     results = PyPREDE.PyPRresults()
-    # [Neff, Ω_ν h^2 × 10^6 (rel), ∑ m_ν / (Ω_ν h^2) [eV], YP (CMB), YP (BBN), D/H × 10^5, 3He/H × 10^5, 7Li/H × 10^10]
-    YP = results[4]
-    DH = 1e-5 * results[5]
-    return YP, DH
+    YP = results['YPBBN']
+    DH = 1e-5 * results['DoHx1e5']
+    #print('YP = ', YP, 'D/H = ', DH)
+    return results
