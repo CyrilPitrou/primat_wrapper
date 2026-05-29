@@ -60,7 +60,7 @@ t_end = 1.e+7 # [s], chosen as 10 x O(t(T_end))
 #######################################
 # Flags for background thermodynamics #
 #######################################
-# Set flag to True for incomplete decoupling effects in a(T)
+# Set flag to True for incomplete decoupling effects in a(T). Advised True
 aTid_flag = True
 # Set flag to compute background
 compute_bckg_flag = True
@@ -68,8 +68,6 @@ compute_bckg_flag = True
 save_bckg_flag = False
 # Set flag to True for some new species with temperature T_NP
 NP_thermo_flag = False
-# Set the initial temperature of the NP species via relation TNP_start = xi_NP*T_start
-xi_NP = 1.
 # Set flag to True for new species in thermal equilibrium with neutrinos
 NP_nu_flag = False
 # Set flag to True for new species in thermal equilibrium with plasma, i.e. photons and e+-

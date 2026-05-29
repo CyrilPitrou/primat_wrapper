@@ -10,7 +10,7 @@ omegabh2 = 0.022425
 PyPRini.smallnet_flag = True
 start_time = time.time()
 
-PyPRini.verbose_flag = True
+PyPRini.verbose_flag = False
 PyPRini.debug_flag = True
 PyPRini.aTid_flag = True
 PyPRini.sampling_nTOp = 50 
@@ -25,7 +25,7 @@ PyPRini.NP_e_flag = False
 PyPRini.Omegabh2 = omegabh2
 PyPRini.eta0b = PyPRini.Omegabh2_to_eta0b * PyPRini.Omegabh2
 PyPRini.DeltaNeff  = Nrelat #Not exactly the same definition in PRIMAT but who cares ?
-PyPRini.smallnet_flag = True
+PyPRini.smallnet_flag = False
 
 #Now we import the main PyPR_main
 import PyPR.PyPR_main as PyPRmain
