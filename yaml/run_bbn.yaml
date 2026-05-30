@@ -14,7 +14,7 @@
 theory:
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
-    PRIMAT_PATH: "PRIMAT"
+#    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
@@ -85,7 +85,7 @@ params:
 # Sampler: MCMC
 sampler:
   mcmc:
-    max_samples: 50000
+    max_samples: 500000
     Rminus1_stop: 0.01
     Rminus1_cl_stop: 0.2
     learn_proposal: True

@@ -389,7 +389,7 @@ If[$RecomputeWeakRates,True,If[Not[FileExistsQ[NamePENFilenp]]||Not[FileExistsQ[
 Tstart=10^11 Kelvin;
 TMiddle:=0.9999*10^10 Kelvin;
 T18:=1.25 *10^9 Kelvin;
-Tend=6.*10^7 Kelvin;
+Tend=4.*10^7 Kelvin;
 
 
 (* ::Input::Initialization:: *)

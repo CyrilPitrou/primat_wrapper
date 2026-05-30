@@ -28,6 +28,15 @@ import tempfile
 import time
 import shutil
 
+# Standard locations to search for a valid MathKernel executable.
+MATHKERNEL_CANDIDATES = [
+    "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
+    "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
+    "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
+    "math13",
+    "MathKernel",
+]
+
 
 class PrimatTheory(Theory):
     """
@@ -73,6 +82,36 @@ class PrimatTheory(Theory):
         if self.BBN_solver == "PyPRIMAT":
             self._init_pyprimat(base)
 
+    def _find_mathkernel(self):
+        """
+        Search for a valid MathKernel executable.
+
+        If MathKernelCommand is set by the user, try it first.  If it is
+        not valid, fall through and search MATHKERNEL_CANDIDATES in order,
+        skipping the user-supplied command (already tried).  Return the
+        first valid command found, or None if none works.
+        """
+        user_cmd = self.MathKernelCommand
+
+        # Build the search list: user command first (if given), then candidates,
+        # excluding the user command from the tail to avoid testing it twice.
+        search = []
+        if user_cmd:
+            search.append(user_cmd)
+        search += [c for c in MATHKERNEL_CANDIDATES if c != user_cmd]
+
+        for candidate in search:
+            resolved = shutil.which(candidate) or candidate
+            if self._is_valid_mathkernel(resolved):
+                if candidate != user_cmd:
+                    self.log.info(
+                        f"MathKernelCommand '{user_cmd}' not valid; "
+                        f"found working kernel at '{resolved}'."
+                    )
+                return resolved
+
+        return None
+
     def _init_primat(self, base):
         """Set up PRIMAT paths and find a valid MathKernel. Falls back to PyPRIMAT on failure."""
 
@@ -93,39 +132,18 @@ class PrimatTheory(Theory):
             self.BBN_solver = "PyPRIMAT"
             return
 
-        # Find MathKernel
-        if self.MathKernelCommand:
-            # User provided a command — validate it
-            if not self._is_valid_mathkernel(self.MathKernelCommand):
-                self.log.warning(
-                    f"MathKernelCommand '{self.MathKernelCommand}' is not a valid "
-                    "MathKernel executable. Falling back to PyPRIMAT."
-                )
-                self.MathKernelCommand = ""
-                self.BBN_solver = "PyPRIMAT"
-                return
-        else:
-            # Auto-detect from standard locations
-            candidates = [
-                "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
-                "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
-                "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
-                "math13",
-                "MathKernel",
-            ]
-            for candidate in candidates:
-                resolved = shutil.which(candidate) or candidate
-                if self._is_valid_mathkernel(resolved):
-                    self.MathKernelCommand = resolved
-                    break
+        # Find a working MathKernel (tries user command first, then candidates)
+        found = self._find_mathkernel()
+        if not found:
+            self.log.warning(
+                "No valid MathKernel found in any of the standard locations. "
+                "Falling back to PyPRIMAT."
+            )
+            self.MathKernelCommand = ""
+            self.BBN_solver = "PyPRIMAT"
+            return
 
-            if not self.MathKernelCommand:
-                self.log.warning(
-                    "No valid MathKernel found. Falling back to PyPRIMAT."
-                )
-                self.BBN_solver = "PyPRIMAT"
-                return
-
+        self.MathKernelCommand = found
         self.log.info("PrimatTheory initialised with PRIMAT.")
         self.log.info(f"  PRIMAT script : {self.primat_script}")
         self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
