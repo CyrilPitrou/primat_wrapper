@@ -9,7 +9,7 @@
 #   (+ all other CLASS params) ──► CLASS ──► [CMB likelihoods]
 #
 # YHe is the bridge: PRIMAT computes it from omegabh2 (and optionally
-# EDE/Nrelat), then CLASS uses it instead of its internal BBN table.
+# EDE/DeltaNeff), then CLASS uses it instead of its internal BBN table.
 # This enforces thermodynamic consistency between BBN and recombination.
 #
 # How CLASS receives YHe
@@ -32,7 +32,7 @@ theory:
     fEDE: 0. #No EDE
     zcEDE: 1e8
     wnEDE:  1.0
-    Nrelat: null #We sample on Nrelat
+    DeltaNeff: null #We sample on DeltaNeff
     provides: [YHe, DH]  # override CLASS's internal BBN table
 
   # 2. CLASS: uses YHe from PRIMAT instead of its internal BBN interpolation.
@@ -111,7 +111,7 @@ params:
       scale: 2
     proposal: 2
     latex: H_0
-  Nrelat:
+  DeltaNeff:
     prior:
       min: -2.0
       max: 2.0
@@ -123,7 +123,7 @@ params:
     latex: N_\mathrm{relat}
     #drop: True
   N_ur: 
-    value: "lambda Nrelat: 2.0308 + Nrelat"
+    value: "lambda DeltaNeff: 2.0308 + DeltaNeff"
   omegabh2:
     prior:
       min: 0.019
@@ -234,4 +234,4 @@ sampler:
               # you will see every parameter value CLASS receives,
               # and the YHe/DH that PRIMAT computes each step
 resume: True
-output: chains/bbn_cmb_Nrelat
+output: chains/bbn_cmb_DeltaNeff

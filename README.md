@@ -15,7 +15,7 @@ measurements.
 | `PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
 | `PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
-| `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and Nrelat = Neff − 3.044 |
+| `yaml/run_bbn_DeltaNeff.yaml` | — | Example run: BBN, baryons and DeltaNeff = Neff − 3.044 |
 
 ## Requirements
 
@@ -49,7 +49,7 @@ primat_wrapper/
 ├── PrimatLikelihood.yaml
 ├── yaml/
 │   ├── run_bbn.yaml              ← BBN only (baryons)
-│   ├── run_bbn_Nrelat.yaml       ← BBN + varying Nrelat
+│   ├── run_bbn_DeltaNeff.yaml       ← BBN + varying DeltaNeff
 │   └── ...                       ← other example run files
 ├── PRIMAT/                        ← PRIMAT code goes here
 │   └── PythonInterface/
@@ -112,7 +112,7 @@ Then run with Cobaya using one of the example YAML files in the `yaml/` folder:
 ```bash
 cobaya-run yaml/run_bbn.yaml
 # or, to also vary the effective number of relativistic degrees of freedom:
-cobaya-run yaml/run_bbn_Nrelat.yaml
+cobaya-run yaml/run_bbn_DeltaNeff.yaml
 ```
 
 The `yaml/` folder contains several ready-to-use Cobaya run files. Each file
@@ -165,7 +165,7 @@ and `DH`; all numerical defaults live in the Python source.
 | `PyPRIMAT_PATH` | `"PyPRIMAT"` | Path to PyPRIMAT directory (relative or absolute) |
 | `MathKernelCommand` | `""` | Mathematica kernel command (auto-detected if empty) |
 | `ReducedNetwork` | `True` | Use reduced nuclear network (faster, recommended for MCMC) |
-| `Nrelat` | `0.0` | Extra relativistic species beyond SM (`null` to vary) |
+| `DeltaNeff` | `0.0` | Extra relativistic species beyond SM neutrinos (`null` to vary) |
 | `Verbose` | `False` | Log BBN inputs and outputs each step |
 | `fEDE` | `0.0` | Early Dark Energy fraction (`null` to vary) |
 | `zcEDE` | `1e8` | EDE critical redshift (`null` to vary) |

@@ -15,13 +15,13 @@ theory:
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
 #    PRIMAT_PATH: "PRIMAT"
-    MathKernelCommand: "math13"
+#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
-    fEDE:   null      # set to null to vary
-    zcEDE:  null    # set to null to vary
+    fEDE:   0.0      # set to null to vary
+    zcEDE:  1.0e8    # set to null to vary
     wnEDE:  1.0
-    DeltaNeff: 0.0      # set to null to vary
+    DeltaNeff: null      # set to null to vary
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
 likelihood:
@@ -40,25 +40,26 @@ params:
   # Sampled parameter
   omegabh2:
     prior:
-      min: 0.019
-      max: 0.026
-    ref:
       dist: norm
       loc:   0.02285
       scale: 0.00016
+    ref:
+      dist: norm
+      loc:   0.02285
+      scale: 0.0001
     proposal: 0.0001
     latex: \Omega_b h^2
 
-#  DeltaNeff:
-#    prior:
-#      min: -2.0
-#      max: 2.0
-#    ref:
-#      dist: norm
-#      loc: 0.0
-#      scale: 0.1
-#    proposal: 0.05
-#    latex: N_\mathrm{relat} 
+  DeltaNeff:
+    prior:
+      min: -2.0
+      max: 2.0
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.1
+    proposal: 0.05
+    latex: N_\mathrm{relat} 
 
   # Derived parameters — NO prior block = Cobaya treats them as derived.
   # PrimatTheory writes these into state["derived"]; Cobaya routes them
@@ -68,45 +69,31 @@ params:
   DH:
     latex: ({\rm D/H})
 
-  fEDE:
-    prior:
-      min: 0.
-      max: 0.3
-    ref:
-      dist: norm
-      loc:   0.06
-      scale: 0.02
-    proposal: 0.01
-    latex: f_{\rm EDE}
-  log10zcEDE:
-    prior:
-      min: 7.
-      max: 10.
-    ref:
-      dist: norm
-      loc:   8.
-      scale: 0.2
-    proposal: 0.2
-    latex: \log_{10} (z_c^{\rm EDE})
-    drop: True
-  zcEDE: 
-    value: "lambda log10zcEDE: 10**(log10zcEDE)"
-    latex: z_c^{\rm EDE}
+  # ── Optional: uncomment to vary EDE parameters ──────────────────────────
+  # fEDE:
+  #   prior:  {min: 0.0, max: 0.2}
+  #   ref:    {dist: norm, loc: 0.05, scale: 0.01}
+  #   proposal: 0.005
+  #   latex: f_{\rm EDE}
+  #
+  # zcEDE:
+  #   prior:  {min: 1.0e3, max: 1.0e9}
+  #   ref:    {dist: norm, loc: 1.0e5, scale: 1.0e4}
+  #   proposal: 5.0e3
+  #   latex: z_c^{\rm EDE}
 
 # ── Sampler ──────────────────────────────────────────────────────────────────
 # Sampler: MCMC
 sampler:
   mcmc:
     max_samples: 50000
-    Rminus1_stop: 0.001
+    Rminus1_stop: 0.01
     Rminus1_cl_stop: 0.2
     learn_proposal: True
     learn_proposal_Rminus1_max: 2.0
     learn_proposal_Rminus1_max_early: 30.0
     output_every: 10s
-    covmat: covmatsave/bbn_priorb_EDE.covmat
 
 # ── Output ───────────────────────────────────────────────────────────────────
-output: chains/bbn_EDE
+output: chains/bbn_priorb_DeltaNeff
 resume: True
-debug: True

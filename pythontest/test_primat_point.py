@@ -22,7 +22,7 @@ config = {
             'DH_sigma': 0.030e-5,
             'MathKernelCommand': '/Applications/Wolfram.app/Contents/MacOS/MathKernel',
             'ReducedNetwork': False,
-            'Nrelat': 0.0,
+            'DeltaNeff': 0.0,
             'Verbose': True  # Keep verbose for debugging
         }
     },

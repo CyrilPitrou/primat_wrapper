@@ -59,7 +59,7 @@ class PrimatTheory(Theory):
     BBN_solver: str = "PRIMAT"   # "PRIMAT" or "PyPRIMAT"
     MathKernelCommand: str = ""  # auto-detected if empty
     ReducedNetwork: bool = True
-    Nrelat: float = 0.0          # set to None to vary via sampler
+    DeltaNeff: float = 0.0        # set to None to vary via sampler
     Verbose: bool = False
 
     # Early Dark Energy
@@ -183,7 +183,7 @@ class PrimatTheory(Theory):
     def get_requirements(self):
         """
         Declare which sampler parameters this theory reads.
-        omegabh2 is always required. EDE / Nrelat are only requested
+        omegabh2 is always required. EDE / DeltaNeff are only requested
         when they are set to None in the YAML (i.e. varied by the sampler).
         """
         reqs = {"omegabh2": None}
@@ -191,8 +191,8 @@ class PrimatTheory(Theory):
             reqs["fEDE"] = None
         if self.zcEDE is None:
             reqs["zcEDE"] = None
-        if self.Nrelat is None:
-            reqs["Nrelat"] = None
+        if self.DeltaNeff is None:
+            reqs["DeltaNeff"] = None
         if self.wnEDE is None:
             reqs["wnEDE"] = None
         return reqs
@@ -205,23 +205,23 @@ class PrimatTheory(Theory):
         """
         start_time = time.time()
 
-        omegabh2 = self.provider.get_param("omegabh2")
-        fEDE   = self.fEDE   if self.fEDE   is not None else self.provider.get_param("fEDE")
-        zcEDE  = self.zcEDE  if self.zcEDE  is not None else self.provider.get_param("zcEDE")
-        Nrelat = self.Nrelat if self.Nrelat is not None else self.provider.get_param("Nrelat")
-        wnEDE  = self.wnEDE  if self.wnEDE  is not None else self.provider.get_param("wnEDE")
+        omegabh2  = self.provider.get_param("omegabh2")
+        fEDE      = self.fEDE      if self.fEDE      is not None else self.provider.get_param("fEDE")
+        zcEDE     = self.zcEDE     if self.zcEDE     is not None else self.provider.get_param("zcEDE")
+        DeltaNeff = self.DeltaNeff if self.DeltaNeff is not None else self.provider.get_param("DeltaNeff")
+        wnEDE     = self.wnEDE     if self.wnEDE     is not None else self.provider.get_param("wnEDE")
 
         self.log.info(
             f"--- Running {self.BBN_solver} ---  "
-            f"omegabh2={omegabh2}  Nrelat={Nrelat}  "
+            f"omegabh2={omegabh2}  DeltaNeff={DeltaNeff}  "
             f"fEDE={fEDE}  zcEDE={zcEDE}  wnEDE={wnEDE}"
         )
 
         if self.BBN_solver == "PRIMAT":
-            results = self._run_bbn_primat(omegabh2, Nrelat=Nrelat,
+            results = self._run_bbn_primat(omegabh2, DeltaNeff=DeltaNeff,
                                            fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
         else:
-            results = self._run_bbn_pyprimat(omegabh2, Nrelat=Nrelat,
+            results = self._run_bbn_pyprimat(omegabh2, DeltaNeff=DeltaNeff,
                                              fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
 
         # Always populate state["derived"] — use NaN on failure so the
@@ -260,7 +260,7 @@ class PrimatTheory(Theory):
             return "True" if value else "False"
         return str(value)
 
-    def _run_bbn_primat(self, omegabh2, Nrelat=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
+    def _run_bbn_primat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PRIMAT via MathKernel and return a dict of abundances, or None on failure."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as tmp:
             output_file = tmp.name
@@ -270,7 +270,7 @@ class PrimatTheory(Theory):
             args = {
                 "$ReducedNetwork":      self.ReducedNetwork,
                 r"h2\[CapitalOmega]b0": omegabh2,
-                "Nrelat":               Nrelat,
+                "Nrelat":               DeltaNeff,  # Mathematica variable name
                 "$Verbose":             self.Verbose,
                 "$EDEBool":             use_EDE,
             }
@@ -327,7 +327,7 @@ class PrimatTheory(Theory):
             if os.path.exists(output_file):
                 os.remove(output_file)
 
-    def _run_bbn_pyprimat(self, omegabh2, Nrelat=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
+    def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PyPRIMAT as a Python module and return a dict of abundances, or None on failure."""
         import sys
         if self.PyPRIMAT_PATH not in sys.path:
@@ -336,11 +336,14 @@ class PrimatTheory(Theory):
             from PyPRIMAT_FinalAbundances import compute_abundances
             results = compute_abundances(
                 omegabh2=omegabh2,
+                DeltaNeff=DeltaNeff,
                 fEDE=fEDE,
                 zcEDE=zcEDE,
                 wnEDE=wnEDE,
+                smallnet_flag=self.ReducedNetwork,
+                verbose_flag=self.Verbose,
             )
-            return {"YHe": results['YPBBN'], "DH": results['DoHx1e5'] * 1e-5}
+            return {"YHe": results['YPBBN'], "DH": results['DoH']}
         except Exception as e:
             self.log.error(f"PyPRIMAT failed: {e}")
             return None

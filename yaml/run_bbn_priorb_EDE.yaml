@@ -21,7 +21,7 @@ theory:
     fEDE:   null      # set to null to vary
     zcEDE:  null    # set to null to vary
     wnEDE:  1.0
-    Nrelat: 0.0      # set to null to vary
+    DeltaNeff: 0.0      # set to null to vary
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
 likelihood:
@@ -50,7 +50,7 @@ params:
     proposal: 0.0001
     latex: \Omega_b h^2
 
-#  Nrelat:
+#  DeltaNeff:
 #    prior:
 #      min: -2.0
 #      max: 2.0

@@ -21,7 +21,7 @@ theory:
     fEDE:   0.0      # set to null to vary
     zcEDE:  1.0e8    # set to null to vary
     wnEDE:  1.0
-    Nrelat: null      # set to null to vary
+    DeltaNeff: null      # set to null to vary
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
 likelihood:
@@ -49,7 +49,7 @@ params:
     proposal: 0.0001
     latex: \Omega_b h^2
 
-  Nrelat:
+  DeltaNeff:
     prior:
       min: -2.0
       max: 2.0
@@ -94,5 +94,5 @@ sampler:
     output_every: 10s
 
 # ── Output ───────────────────────────────────────────────────────────────────
-output: chains/bbn_Nrelat
+output: chains/bbn_DeltaNeff
 resume: True

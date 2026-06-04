@@ -15,12 +15,12 @@ theory:
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
 #    PRIMAT_PATH: "PRIMAT"
-    MathKernelCommand: "math13"
+#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
     fEDE:   null      # set to null to vary
     zcEDE:  null    # set to null to vary
-    wnEDE:  1.0
+    wnEDE:  0.5
     DeltaNeff: 0.0      # set to null to vary
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
@@ -107,6 +107,6 @@ sampler:
     covmat: covmatsave/bbn_priorb_EDE.covmat
 
 # ── Output ───────────────────────────────────────────────────────────────────
-output: chains/bbn_EDE
+output: chains/bbn_EDE_wn0p5
 resume: True
 debug: True

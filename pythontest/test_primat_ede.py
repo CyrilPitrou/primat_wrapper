@@ -13,7 +13,7 @@ config = {
     'DH_mean': 2.501e-5,
     'DH_sigma': 0.028e-5,
     'ReducedNetwork': False,
-    'Nrelat': 0.0,
+    'DeltaNeff': 0.0,
     'Verbose': True,
     # EDE parameters - set to null to allow them to be passed as parameters
     'fEDE': None,  # Will be provided in test point

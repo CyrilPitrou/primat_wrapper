@@ -15,7 +15,8 @@ theory:
   primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
 #    PRIMAT_PATH: "PRIMAT"
-    MathKernelCommand: "math13"
+    BBN_solver: "PyPRIMAT"
+#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
     fEDE:   null      # set to null to vary
@@ -40,12 +41,13 @@ params:
   # Sampled parameter
   omegabh2:
     prior:
-      min: 0.019
-      max: 0.026
-    ref:
       dist: norm
       loc:   0.02285
       scale: 0.00016
+    ref:
+      dist: norm
+      loc:   0.02285
+      scale: 0.0001
     proposal: 0.0001
     latex: \Omega_b h^2
 
@@ -97,16 +99,15 @@ params:
 # Sampler: MCMC
 sampler:
   mcmc:
-    max_samples: 50000
-    Rminus1_stop: 0.001
+    max_samples: 5000
+    Rminus1_stop: 0.01
     Rminus1_cl_stop: 0.2
     learn_proposal: True
     learn_proposal_Rminus1_max: 2.0
     learn_proposal_Rminus1_max_early: 30.0
     output_every: 10s
-    covmat: covmatsave/bbn_priorb_EDE.covmat
 
 # ── Output ───────────────────────────────────────────────────────────────────
-output: chains/bbn_EDE
-resume: True
+output: chains/testpy
+force: True
 debug: True
