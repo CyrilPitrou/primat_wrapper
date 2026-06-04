@@ -72,7 +72,11 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     def initialize(self):
-        base = os.path.dirname(os.path.abspath(__file__))
+        # This module lives in the installed `primat_wrapper/` package; the
+        # bundled solver directories (PRIMAT/, PyPRIMAT/) sit one level up at
+        # the repository root. Relative PRIMAT_PATH / PyPRIMAT_PATH values from
+        # the YAML are resolved against this `base`.
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         if self.BBN_solver == "PRIMAT":
             self.log.info("Attempting to use PRIMAT as BBN solver.")
@@ -281,16 +285,15 @@ class PrimatTheory(Theory):
             if self.Verbose:
                 self.log.info(f"PRIMAT args : {extra}")
 
-            original_dir = os.getcwd()
-            os.chdir(os.path.dirname(self.primat_script))
-            try:
-                proc = subprocess.run(
-                    [self.MathKernelCommand, "-initfile",
-                     os.path.basename(self.primat_script), extra, option_output],
-                    capture_output=True, text=True, timeout=300,
-                )
-            finally:
-                os.chdir(original_dir)
+            # Run MathKernel from the script's directory (PRIMAT resolves its
+            # own relative paths there) via subprocess's cwd= rather than a
+            # global os.chdir, so we never mutate this process's working dir.
+            proc = subprocess.run(
+                [self.MathKernelCommand, "-initfile",
+                 os.path.basename(self.primat_script), extra, option_output],
+                capture_output=True, text=True, timeout=300,
+                cwd=os.path.dirname(self.primat_script),
+            )
 
             if self.Verbose:
                 self.log.info(f"MathKernel exit code: {proc.returncode}")

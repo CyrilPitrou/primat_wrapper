@@ -12,8 +12,8 @@
 
 # ── Theory ───────────────────────────────────────────────────────────────────
 theory:
-  primat_theory.PrimatTheory:
-#    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_theory.py
+  primat_wrapper.primat_theory.PrimatTheory:
+#    # No python_path needed: installed via `pip install -e .`
 #    PRIMAT_PATH: "PRIMAT"
     MathKernelCommand: "math13"
     ReducedNetwork: True
@@ -25,8 +25,8 @@ theory:
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
 likelihood:
-  primat_likelihood.PrimatLikelihood:
-#    python_path: /nethome/pitrou/cobaya/primat_wrapper/   # directory containing primat_likelihood.py
+  primat_wrapper.primat_likelihood.PrimatLikelihood:
+#    # No python_path needed: installed via `pip install -e .`
     YHe_mean:         0.2458
     YHe_sigma:        0.0013
     YHe_PRIMAT_sigma: 0.0001091146

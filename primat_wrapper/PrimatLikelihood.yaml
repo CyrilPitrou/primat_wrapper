@@ -9,4 +9,4 @@ params:
   YHe:
     latex: Y_p^\mathrm{BBN}
   DH:
-    latex: ({\rm D/H}) \times 10^5
+    latex: ({\rm D/H})

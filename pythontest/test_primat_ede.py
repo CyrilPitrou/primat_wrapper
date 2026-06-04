@@ -1,79 +1,88 @@
 #!/usr/bin/env python
 """
-Test script to evaluate PRIMAT likelihood at a single point with EDE parameters
+Single-point smoke test of the wrapper with Early Dark Energy (EDE).
+
+Builds one Cobaya model in which fEDE and zcEDE are free inputs, then evaluates
+it twice -- once with an EDE component and once without (fEDE=0) -- to confirm
+that EDE feeds through PrimatTheory and shifts the predicted abundances.
+
+Usage:
+    python pythontest/test_primat_ede.py
 """
 
-from primat_likelihood import PrimatLikelihood
 import numpy as np
+from cobaya.model import get_model
 
-# Configure the likelihood
+BBN_SOLVER = "PyPRIMAT"   # runs without Mathematica
+OMEGABH2 = 0.022425
+
 config = {
-    'He4_mean': 0.2458,
-    'He4_sigma': 0.0013,
-    'DH_mean': 2.501e-5,
-    'DH_sigma': 0.028e-5,
-    'ReducedNetwork': False,
-    'DeltaNeff': 0.0,
-    'Verbose': True,
-    # EDE parameters - set to null to allow them to be passed as parameters
-    'fEDE': None,  # Will be provided in test point
-    'zcEDE': None, # Will be provided in test point
-    'wnEDE': 1.0,  # Fixed equation of state
+    "debug": False,
+    "theory": {
+        "primat_wrapper.primat_theory.PrimatTheory": {
+            "BBN_solver": BBN_SOLVER,
+            "ReducedNetwork": False,
+            "DeltaNeff": 0.0,
+            "wnEDE": 1.0,
+            # null => read from the sampler/provider (declared in params below)
+            "fEDE": None,
+            "zcEDE": None,
+            "Verbose": False,
+        }
+    },
+    "likelihood": {
+        "primat_wrapper.primat_likelihood.PrimatLikelihood": {
+            "YHe_mean": 0.2458,
+            "YHe_sigma": 0.0013,
+            "DH_mean": 2.527e-5,
+            "DH_sigma": 0.030e-5,
+        }
+    },
+    "params": {
+        "omegabh2": OMEGABH2,
+        # Free inputs evaluated explicitly below (uniform priors => flat,
+        # so the prior term cancels when comparing the two points).
+        "fEDE": {"prior": {"min": 0.0, "max": 0.3}, "latex": "f_{\\rm EDE}"},
+        "zcEDE": {"prior": {"min": 1.0e6, "max": 1.0e9}, "latex": "z_c^{\\rm EDE}"},
+        "YHe": {"latex": "Y_p"},
+        "DH": {"latex": "({\\rm D/H})"},
+    },
 }
 
-# Create likelihood instance
-likelihood = PrimatLikelihood(config)
-likelihood.initialize()
 
-# Create a mock provider that returns our test values
-class MockProvider:
-    def __init__(self, params):
-        self.params = params
-    
-    def get_param(self, name):
-        if name in self.params:
-            return self.params[name]
-        else:
-            raise ValueError(f"Parameter {name} not provided")
+def evaluate(model, label, point):
+    result = model.logposterior(point)
+    derived = dict(zip(model.parameterization.derived_params(), result.derived))
+    loglike = sum(result.loglikes)
+    print(f"{label}")
+    print(f"  fEDE={point['fEDE']:g}  zcEDE={point['zcEDE']:g}")
+    print(f"  YHe = {derived.get('YHe', float('nan')):.8f}"
+          f"   D/H = {derived.get('DH', float('nan')):.6e}"
+          f"   loglike = {loglike:.4f}")
+    return derived, loglike
 
-# Test point with EDE
-test_params = {
-    'omegabh2': 0.022425,  # Planck 2018 value
-    'fEDE': 0.08,          # 8% EDE fraction
-    'zcEDE': 3e7,          # Critical redshift ~ 30 million
-}
 
-likelihood.provider = MockProvider(test_params)
+def test_ede():
+    print("=" * 70)
+    print(f"EDE smoke test  (solver={BBN_SOLVER}, omegabh2={OMEGABH2})")
+    print("=" * 70)
 
-# Evaluate likelihood
-print(f"\n{'='*60}")
-print("Testing PRIMAT likelihood with EDE parameters")
-print(f"{'='*60}")
-print(f"Test point:")
-for key, value in test_params.items():
-    print(f"  {key:15s} = {value}")
-print(f"{'='*60}\n")
+    model = get_model(config)
 
-logp = likelihood.logp()
+    # zcEDE chosen near the BBN epoch (z ~ 1e9) so EDE actually boosts the
+    # expansion rate while the abundances are being set.
+    d_ede, ll_ede = evaluate(model, "With EDE:", {"fEDE": 0.08, "zcEDE": 1e9})
+    d_std, ll_std = evaluate(model, "No EDE:  ", {"fEDE": 0.0, "zcEDE": 1e8})
 
-print(f"\n{'='*60}")
-print(f"Log-likelihood: {logp:.4f}")
-print(f"{'='*60}\n")
+    dYHe = d_ede["YHe"] - d_std["YHe"]
+    print(f"\n  ΔYHe (EDE - no EDE) = {dYHe:+.6e}")
+    print(f"  Δloglike            = {ll_ede - ll_std:+.4f}")
 
-# Test without EDE for comparison
-print(f"\n{'='*60}")
-print("Testing without EDE (fEDE=0)")
-print(f"{'='*60}")
+    # EDE raises the expansion rate during BBN, which must change Yp.
+    ok = np.isfinite(ll_ede) and np.isfinite(ll_std) and abs(dYHe) > 1e-6
+    print("\n" + ("PASS" if ok else "FAIL: EDE produced no abundance shift"))
+    return ok
 
-test_params_no_ede = {
-    'omegabh2': 0.022425,
-    'fEDE': 0.0,
-    'zcEDE': 1e8,
-}
 
-likelihood.provider = MockProvider(test_params_no_ede)
-logp_no_ede = likelihood.logp()
-
-print(f"\nLog-likelihood (no EDE): {logp_no_ede:.4f}")
-print(f"Difference: {logp - logp_no_ede:.4f}")
-print(f"{'='*60}\n")
+if __name__ == "__main__":
+    raise SystemExit(0 if test_ede() else 1)

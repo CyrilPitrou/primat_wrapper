@@ -14,6 +14,12 @@ pip install -e .
 pip install -e . --break-system-packages
 ```
 
+Editable mode (`-e`) is **required**: the `PRIMAT/` and `PyPRIMAT/` solver
+directories sit at the repository root, next to (not inside) the
+`primat_wrapper/` package, and are located at run time relative to it. A plain
+`pip install .` / wheel would copy only the package and leave the solvers
+behind.
+
 ## Testing after changes
 
 After any modification to the Cobaya wrapper (`primat_theory.py`, `primat_likelihood.py`, or the YAML defaults), run both integration tests:
@@ -52,20 +58,24 @@ cd PyPRIMAT && pytest Tests/test_regression.py
 ## Architecture
 
 ```
-primat_theory.py      PrimatTheory   Cobaya Theory: runs PRIMAT or PyPRIMAT, writes YHe/DH to state["derived"]
-primat_likelihood.py  PrimatLikelihood  Cobaya Likelihood: Gaussian logp over YHe and DH
-PrimatTheory.yaml     LaTeX labels for derived params (not numerical defaults)
-PrimatLikelihood.yaml LaTeX labels for derived params (not numerical defaults)
+primat_wrapper/                         The installable Python package
+  primat_theory.py      PrimatTheory      Cobaya Theory: runs PRIMAT or PyPRIMAT, writes YHe/DH to state["derived"]
+  primat_likelihood.py  PrimatLikelihood  Cobaya Likelihood: Gaussian logp over YHe and DH
+  PrimatTheory.yaml     LaTeX labels for derived params (not numerical defaults)
+  PrimatLikelihood.yaml LaTeX labels for derived params (not numerical defaults)
 yaml/                 Ready-to-use Cobaya run YAML files
 PRIMAT/               Mathematica PRIMAT2024 code (not in repo, user-supplied)
 PyPRIMAT/             Pure-Python BBN solver (fallback)
 pythontest/           Quick single-point smoke tests using cobaya.model.get_model
 ```
 
+In Cobaya YAMLs the classes are referenced by their dotted package path,
+e.g. `primat_wrapper.primat_theory.PrimatTheory`.
+
 ### Data flow
 
 1. Cobaya calls `PrimatTheory.calculate()` with the current `omegabh2` (and optionally `DeltaNeff`, `fEDE`, `zcEDE`, `wnEDE`).
-2. The theory runs either PRIMAT via MathKernel subprocess (writing a temp CSV) or calls `PyPRIMAT.PyPRIMAT_FinalAbundances.compute_abundances()` directly.
+2. The theory runs either PRIMAT via MathKernel subprocess (writing a temp CSV) or calls `PyPR.PyPRclass(...).solve()` directly.
 3. Results are stored in `state["derived"] = {"YHe": ..., "DH": ...}`.
 4. Cobaya injects `YHe` and `DH` as keyword arguments into `PrimatLikelihood.logp()`.
 5. The likelihood returns the sum of two Gaussian log-PDFs (obs uncertainty ⊕ theoretical uncertainty in quadrature).
@@ -82,4 +92,4 @@ pythontest/           Quick single-point smoke tests using cobaya.model.get_mode
 
 ### PyPRIMAT internals
 
-See `PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `PyPRIMAT/PyPRIMAT_FinalAbundances.py::compute_abundances()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoHx1e5` (D/H × 10⁵).
+See `PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `PyPRIMAT/PyPR/PyPR_main.py::PyPRclass(params).solve()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoH` (the raw D/H ratio, not scaled by 10⁵).

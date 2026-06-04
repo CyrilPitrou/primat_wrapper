@@ -10,12 +10,12 @@ measurements.
 
 | File | Cobaya class | Role |
 |---|---|---|
-| `primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
-| `primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
-| `PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
-| `PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
+| `primat_wrapper/primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
+| `primat_wrapper/primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
+| `primat_wrapper/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
+| `primat_wrapper/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
-| `yaml/run_bbn_DeltaNeff.yaml` | — | Example run: BBN, baryons and DeltaNeff = Neff − 3.044 |
+| `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and DeltaNeff = Neff − 3.044 |
 
 ## Requirements
 
@@ -40,24 +40,31 @@ git clone https://your-repo/primat_wrapper.git
 The directory structure should look like this:
 
 ```
-primat_wrapper/
-├── __init__.py
-├── setup.py
-├── primat_theory.py
-├── primat_likelihood.py
-├── PrimatTheory.yaml
-├── PrimatLikelihood.yaml
-├── yaml/
+primat_wrapper/                    ← repository root (clone target)
+├── pyproject.toml
+├── README.md
+├── primat_wrapper/                ← the installable Python package
+│   ├── __init__.py
+│   ├── primat_theory.py
+│   ├── primat_likelihood.py
+│   ├── PrimatTheory.yaml
+│   └── PrimatLikelihood.yaml
+├── yaml/                          ← example Cobaya run files
 │   ├── run_bbn.yaml              ← BBN only (baryons)
-│   ├── run_bbn_DeltaNeff.yaml       ← BBN + varying DeltaNeff
+│   ├── run_bbn_Nrelat.yaml       ← BBN + varying DeltaNeff
 │   └── ...                       ← other example run files
-├── PRIMAT/                        ← PRIMAT code goes here
+├── PRIMAT/                        ← PRIMAT code goes here (user-supplied)
 │   └── PythonInterface/
 │       └── PyPRIMAT_FinalAbundances.m
-├── PyPRIMAT/                      ← PyPRIMAT code goes here (fallback)
-│   └── PyPRIMAT_FinalAbundances.py
-└── README.md
+└── PyPRIMAT/                      ← bundled PyPRIMAT solver (fallback)
+    └── PyPR/
+        └── PyPR_main.py
 ```
+
+`PRIMAT/` and `PyPRIMAT/` live at the repository root, **next to** the
+`primat_wrapper/` package (not inside it); the wrapper locates them there at
+run time. This is why the package must be installed in editable mode — see
+below.
 
 ### 2. Install with pip (editable mode)
 
@@ -70,6 +77,12 @@ pip install -e .
 
 The `-e` flag installs in *editable* mode, meaning changes to the `.py` files
 take effect immediately without reinstalling.
+
+> **Editable mode is required, not just convenient.** A plain `pip install .`
+> (or installing from a wheel / `pip install git+…`) copies only the
+> `primat_wrapper/` package into `site-packages` and leaves the `PRIMAT/` and
+> `PyPRIMAT/` solver directories behind, so the wrapper would fail to find them
+> at run time. Clone the repository and use `pip install -e .`.
 
 If your Python installation is externally managed (e.g. on macOS with Homebrew),
 add `--break-system-packages`:
@@ -112,7 +125,7 @@ Then run with Cobaya using one of the example YAML files in the `yaml/` folder:
 ```bash
 cobaya-run yaml/run_bbn.yaml
 # or, to also vary the effective number of relativistic degrees of freedom:
-cobaya-run yaml/run_bbn_DeltaNeff.yaml
+cobaya-run yaml/run_bbn_Nrelat.yaml
 ```
 
 The `yaml/` folder contains several ready-to-use Cobaya run files. Each file
