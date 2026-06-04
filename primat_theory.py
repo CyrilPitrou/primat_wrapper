@@ -155,15 +155,13 @@ class PrimatTheory(Theory):
         elif not os.path.isabs(self.PyPRIMAT_PATH):
             self.PyPRIMAT_PATH = os.path.join(base, self.PyPRIMAT_PATH)
 
-        self.pyprimat_script = os.path.join(
-            self.PyPRIMAT_PATH, "PyPRIMAT_FinalAbundances.py"
-        )
-        if not os.path.exists(self.pyprimat_script):
+        pypr_pkg = os.path.join(self.PyPRIMAT_PATH, "PyPR")
+        if not os.path.isdir(pypr_pkg):
             raise FileNotFoundError(
-                f"PyPRIMAT script not found at {self.pyprimat_script}"
+                f"PyPRIMAT package directory not found at {pypr_pkg}"
             )
         self.log.info("PrimatTheory initialised with PyPRIMAT.")
-        self.log.info(f"  PyPRIMAT script : {self.pyprimat_script}")
+        self.log.info(f"  PyPRIMAT path : {self.PyPRIMAT_PATH}")
 
     @staticmethod
     def _is_valid_mathkernel(cmd):
@@ -328,21 +326,23 @@ class PrimatTheory(Theory):
                 os.remove(output_file)
 
     def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
-        """Invoke PyPRIMAT as a Python module and return a dict of abundances, or None on failure."""
+        """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
         import sys
         if self.PyPRIMAT_PATH not in sys.path:
             sys.path.insert(0, self.PyPRIMAT_PATH)
         try:
-            from PyPRIMAT_FinalAbundances import compute_abundances
-            results = compute_abundances(
-                omegabh2=omegabh2,
-                DeltaNeff=DeltaNeff,
-                fEDE=fEDE,
-                zcEDE=zcEDE,
-                wnEDE=wnEDE,
-                smallnet_flag=self.ReducedNetwork,
-                verbose_flag=self.Verbose,
-            )
+            from PyPR import PyPRclass
+            results = PyPRclass({
+                "Omegabh2":          omegabh2,
+                "DeltaNeff":         DeltaNeff,
+                "fEDE":              fEDE,
+                "zcEDE":             zcEDE,
+                "wnEDE":             wnEDE,
+                "smallnet_flag":     self.ReducedNetwork,
+                "verbose_flag":      self.Verbose,
+                "compute_nTOp_flag": False,
+                "save_nTOp_flag":    False,
+            }).solve()
             return {"YHe": results['YPBBN'], "DH": results['DoH']}
         except Exception as e:
             self.log.error(f"PyPRIMAT failed: {e}")
