@@ -56,7 +56,7 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
     PRIMAT_PATH: str = ""
     PyPRIMAT_PATH: str = ""
-    BBN_solver: str = "PRIMAT"   # "PRIMAT" or "PyPRIMAT"
+    BBN_solver: str = "PyPRIMAT"  # "PyPRIMAT" or "PRIMAT"
     MathKernelCommand: str = ""  # auto-detected if empty
     ReducedNetwork: bool = True
     DeltaNeff: float = 0.0        # set to None to vary via sampler
@@ -72,17 +72,15 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     def initialize(self):
-        # This module lives in the installed `primat_wrapper/` package; the
-        # bundled solver directories (PRIMAT/, PyPRIMAT/) sit one level up at
-        # the repository root. Relative PRIMAT_PATH / PyPRIMAT_PATH values from
-        # the YAML are resolved against this `base`.
+        # base = the primat_tools repo root (parent of the primat_wrapper/ package).
+        # Relative PRIMAT_PATH values from the YAML are resolved against it.
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         if self.BBN_solver == "PRIMAT":
-            self.log.info("Attempting to use PRIMAT as BBN solver.")
+            self.log.info("Attempting to use PRIMAT (Mathematica) as BBN solver.")
             self._init_primat(base)
 
-        # Note: _init_primat may switch BBN_solver to "PyPRIMAT" on failure
+        # _init_primat may fall back to "PyPRIMAT" if MathKernel is unavailable
         if self.BBN_solver == "PyPRIMAT":
             self._init_pyprimat(base)
 
@@ -119,9 +117,13 @@ class PrimatTheory(Theory):
     def _init_primat(self, base):
         """Set up PRIMAT paths and find a valid MathKernel. Falls back to PyPRIMAT on failure."""
 
-        # Resolve PRIMAT_PATH
+        # Resolve PRIMAT_PATH: explicit YAML value → $PRIMAT_DIR env var → sibling ../PRIMAT
         if not self.PRIMAT_PATH:
-            self.PRIMAT_PATH = os.path.join(base, "PRIMAT")
+            env_dir = os.environ.get("PRIMAT_DIR", "")
+            if env_dir:
+                self.PRIMAT_PATH = env_dir
+            else:
+                self.PRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PRIMAT"))
         elif not os.path.isabs(self.PRIMAT_PATH):
             self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
 
@@ -153,18 +155,29 @@ class PrimatTheory(Theory):
         self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
 
     def _init_pyprimat(self, base):
-        """Set up PyPRIMAT path."""
+        """Verify that pypr is importable. Prefers the installed package; falls back to PyPRIMAT_PATH."""
+        import sys
+        try:
+            import pypr  # noqa: F401 — just checking it's importable
+            self.log.info("PrimatTheory initialised with PyPRIMAT (installed package).")
+            return
+        except ImportError:
+            pass
+
+        # Not installed — try path-based fallback
         if not self.PyPRIMAT_PATH:
-            self.PyPRIMAT_PATH = os.path.join(base, "PyPRIMAT")
+            self.PyPRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PyPRIMAT"))
         elif not os.path.isabs(self.PyPRIMAT_PATH):
             self.PyPRIMAT_PATH = os.path.join(base, self.PyPRIMAT_PATH)
 
-        pypr_pkg = os.path.join(self.PyPRIMAT_PATH, "PyPR")
-        if not os.path.isdir(pypr_pkg):
+        if not os.path.isdir(self.PyPRIMAT_PATH):
             raise FileNotFoundError(
-                f"PyPRIMAT package directory not found at {pypr_pkg}"
+                f"pypr is not installed and PyPRIMAT directory not found at {self.PyPRIMAT_PATH}. "
+                "Install PyPRIMAT with: pip install -e /path/to/PyPRIMAT"
             )
-        self.log.info("PrimatTheory initialised with PyPRIMAT.")
+        if self.PyPRIMAT_PATH not in sys.path:
+            sys.path.insert(0, self.PyPRIMAT_PATH)
+        self.log.info("PrimatTheory initialised with PyPRIMAT (path fallback).")
         self.log.info(f"  PyPRIMAT path : {self.PyPRIMAT_PATH}")
 
     @staticmethod
@@ -330,11 +343,8 @@ class PrimatTheory(Theory):
 
     def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
-        import sys
-        if self.PyPRIMAT_PATH not in sys.path:
-            sys.path.insert(0, self.PyPRIMAT_PATH)
         try:
-            from PyPR import PyPRclass
+            from pypr import PyPRclass
             results = PyPRclass({
                 "Omegabh2":          omegabh2,
                 "DeltaNeff":         DeltaNeff,

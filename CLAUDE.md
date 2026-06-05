@@ -8,17 +8,39 @@ A [Cobaya](https://cobaya.readthedocs.io) theory+likelihood package that wraps t
 
 ## Installation
 
+The three repos are kept **separate**. Typical layout (all siblings):
+
+```
+somewhere/
+  PRIMAT/        ← Mathematica BBN code
+  PyPRIMAT/      ← Python BBN code
+  primat_tools/  ← this repo
+```
+
 ```bash
+# 1. Install PyPRIMAT as a Python package (editable)
+pip install -e ../PyPRIMAT
+
+# 2. Install this wrapper (editable)
 pip install -e .
 # or on macOS with Homebrew-managed Python:
 pip install -e . --break-system-packages
 ```
 
-Editable mode (`-e`) is **required**: the `PRIMAT/` and `PyPRIMAT/` solver
-directories sit at the repository root, next to (not inside) the
-`primat_wrapper/` package, and are located at run time relative to it. A plain
-`pip install .` / wheel would copy only the package and leave the solvers
-behind.
+Editable mode (`-e`) is required for this wrapper so that the YAML files
+inside `primat_wrapper/` are found via `importlib.resources`.
+
+### PRIMAT path discovery
+
+The Mathematica PRIMAT code is found in this order:
+1. Explicit `PRIMAT_PATH` in the Cobaya YAML
+2. `$PRIMAT_DIR` environment variable (set once in your shell profile)
+3. Sibling directory `../PRIMAT` relative to this repo root
+
+### PyPRIMAT path discovery
+
+`from pypr import PyPRclass` is tried first (works when installed via pip).
+If not installed, `PyPRIMAT_PATH` in the YAML is used as a `sys.path` fallback.
 
 ## Testing after changes
 
@@ -36,6 +58,7 @@ Each test passes once Cobaya has started sampling and begun writing chain files 
 
 ## Running
 
+```bash
 # Vary DeltaNeff (Neff - 3.044)
 cobaya-run yaml/run_bbn_Nrelat.yaml
 
@@ -64,10 +87,10 @@ primat_wrapper/                         The installable Python package
   PrimatTheory.yaml     LaTeX labels for derived params (not numerical defaults)
   PrimatLikelihood.yaml LaTeX labels for derived params (not numerical defaults)
 yaml/                 Ready-to-use Cobaya run YAML files
-PRIMAT/               Mathematica PRIMAT2024 code (not in repo, user-supplied)
-PyPRIMAT/             Pure-Python BBN solver (fallback)
 pythontest/           Quick single-point smoke tests using cobaya.model.get_model
 ```
+
+`PRIMAT/` and `PyPRIMAT/` are **not inside this repo**; see installation notes above.
 
 In Cobaya YAMLs the classes are referenced by their dotted package path,
 e.g. `primat_wrapper.primat_theory.PrimatTheory`.
@@ -82,7 +105,7 @@ e.g. `primat_wrapper.primat_theory.PrimatTheory`.
 
 ### BBN solver selection
 
-`BBN_solver` in the YAML controls which solver is used. If `"PRIMAT"` is requested but no valid MathKernel is found (checked at `initialize()` via `subprocess.run([cmd, "-version"])`), it automatically falls back to `"PyPRIMAT"`.
+`BBN_solver` in the YAML controls which solver is used. The default is `"PyPRIMAT"`. If `"PRIMAT"` is requested but no valid MathKernel is found (checked at `initialize()` via `subprocess.run([cmd, "-version"])`), it automatically falls back to `"PyPRIMAT"`.
 
 ### Parameter conventions
 
@@ -92,4 +115,4 @@ e.g. `primat_wrapper.primat_theory.PrimatTheory`.
 
 ### PyPRIMAT internals
 
-See `PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `PyPRIMAT/PyPR/PyPR_main.py::PyPRclass(params).solve()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoH` (the raw D/H ratio, not scaled by 10⁵).
+See `../PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `pypr.PyPRclass(params).solve()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoH` (the raw D/H ratio, not scaled by 10⁵).

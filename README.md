@@ -21,77 +21,77 @@ measurements.
 
 - Python ≥ 3.10
 - [Cobaya](https://cobaya.readthedocs.io) ≥ 3.5
-- Either:
-  - Mathematica / Wolfram Engine with a working kernel command
-    (`MathKernel`, `math13`, etc.) and the
-    [PRIMAT2024](https://www2.iap.fr/users/pitrou/primat.htm) code; or
-  - The pure-Python PyPRIMAT code (used automatically as a fallback if
-    no MathKernel is found)
+- [PyPRIMAT](https://github.com/CyrilPitrou/pyprimat_private) (pure-Python BBN solver, default)
+- Optionally: Mathematica / Wolfram Engine with a working kernel command
+  (`MathKernel`, `math13`, etc.) and the
+  [PRIMAT](https://www2.iap.fr/users/pitrou/primat.htm) Mathematica code
 
 ## Installation
 
-### 1. Clone or download the package
+### 1. Arrange the repositories as siblings
+
+Clone all three repositories into the same parent directory:
 
 ```bash
-git clone https://your-repo/primat_wrapper.git
-# or just place the primat_wrapper/ folder wherever you like
+cd somewhere/
+git clone git@github.com:CyrilPitrou/primat.git          PRIMAT
+git clone git@github.com:CyrilPitrou/pyprimat_private.git PyPRIMAT
+git clone git@github.com:CyrilPitrou/primat_wrapper.git   primat_tools
 ```
 
-The directory structure should look like this:
+The layout should look like this:
 
 ```
-primat_wrapper/                    ← repository root (clone target)
-├── pyproject.toml
-├── README.md
-├── primat_wrapper/                ← the installable Python package
-│   ├── __init__.py
-│   ├── primat_theory.py
-│   ├── primat_likelihood.py
-│   ├── PrimatTheory.yaml
-│   └── PrimatLikelihood.yaml
-├── yaml/                          ← example Cobaya run files
-│   ├── run_bbn.yaml              ← BBN only (baryons)
-│   ├── run_bbn_Nrelat.yaml       ← BBN + varying DeltaNeff
-│   └── ...                       ← other example run files
-├── PRIMAT/                        ← PRIMAT code goes here (user-supplied)
-│   └── PythonInterface/
-│       └── PyPRIMAT_FinalAbundances.m
-└── PyPRIMAT/                      ← bundled PyPRIMAT solver (fallback)
-    └── PyPR/
-        └── PyPR_main.py
+somewhere/
+├── PRIMAT/         ← Mathematica BBN code
+├── PyPRIMAT/       ← Python BBN code
+└── primat_tools/   ← this repository
+    ├── pyproject.toml
+    ├── README.md
+    ├── primat_wrapper/
+    └── yaml/
 ```
 
-`PRIMAT/` and `PyPRIMAT/` live at the repository root, **next to** the
-`primat_wrapper/` package (not inside it); the wrapper locates them there at
-run time. This is why the package must be installed in editable mode — see
-below.
+The three repos are **independent**; none lives inside another.
 
-### 2. Install with pip (editable mode)
-
-From **inside** the `primat_wrapper/` directory:
+### 2. Install PyPRIMAT as a Python package
 
 ```bash
-cd primat_wrapper/
+pip install -e ../PyPRIMAT
+```
+
+This makes `pypr` importable system-wide — no path configuration needed for
+the Python solver.
+
+### 3. Install this wrapper
+
+```bash
 pip install -e .
 ```
 
-The `-e` flag installs in *editable* mode, meaning changes to the `.py` files
-take effect immediately without reinstalling.
+Editable mode (`-e`) is required so that the YAML files inside
+`primat_wrapper/` are found correctly by Cobaya via `importlib.resources`.
 
-> **Editable mode is required, not just convenient.** A plain `pip install .`
-> (or installing from a wheel / `pip install git+…`) copies only the
-> `primat_wrapper/` package into `site-packages` and leaves the `PRIMAT/` and
-> `PyPRIMAT/` solver directories behind, so the wrapper would fail to find them
-> at run time. Clone the repository and use `pip install -e .`.
+On macOS with a Homebrew-managed Python, add `--break-system-packages` to both
+`pip install` commands above.
 
-If your Python installation is externally managed (e.g. on macOS with Homebrew),
-add `--break-system-packages`:
+### 4. Tell the wrapper where to find the Mathematica PRIMAT code
+
+This step is only needed if you intend to use `BBN_solver: "PRIMAT"`. Add the
+following line to your shell profile (`~/.zshrc`, `~/.bashrc`, or equivalent):
 
 ```bash
-pip install -e . --break-system-packages
+export PRIMAT_DIR=/absolute/path/to/PRIMAT
 ```
 
-### 3. Verify the installation
+Then reload your shell (`source ~/.zshrc`) or open a new terminal.
+
+The wrapper resolves the PRIMAT directory in this order:
+1. Explicit `PRIMAT_PATH` key in your Cobaya YAML (highest priority)
+2. `$PRIMAT_DIR` environment variable
+3. `../PRIMAT` relative to the `primat_tools` repo root (last resort)
+
+### 5. Verify the installation
 
 ```bash
 python3 -c "
@@ -111,9 +111,8 @@ Reference the classes using their fully-qualified module names:
 ```yaml
 theory:
   primat_wrapper.primat_theory.PrimatTheory:
-    BBN_solver: "PRIMAT"      # or "PyPRIMAT" to force the Python fallback
-    PRIMAT_PATH: "PRIMAT"     # relative to package dir, or absolute
-    MathKernelCommand: ""     # leave empty for auto-detection
+    BBN_solver: "PyPRIMAT"    # default; use "PRIMAT" for the Mathematica solver
+    MathKernelCommand: ""     # leave empty for auto-detection (PRIMAT only)
     Verbose: False
 
 likelihood:
@@ -136,10 +135,11 @@ analysis. Copy and modify one to suit your needs.
 
 `PrimatTheory` supports two BBN solvers, controlled by the `BBN_solver` option:
 
-- **`PRIMAT`** (default): calls the Mathematica PRIMAT code via MathKernel.
-  Requires a Mathematica / Wolfram Engine installation and the PRIMAT2024 code.
-- **`PyPRIMAT`**: calls a pure-Python implementation. No Mathematica needed.
-  Used automatically as a fallback if no valid MathKernel is found.
+- **`PyPRIMAT`** (default): calls the pure-Python PyPRIMAT implementation.
+  No Mathematica needed; requires PyPRIMAT to be installed (see above).
+- **`PRIMAT`**: calls the Mathematica PRIMAT code via MathKernel.
+  Requires a Mathematica / Wolfram Engine installation and the PRIMAT code.
+  Falls back to `PyPRIMAT` automatically if no valid MathKernel is found.
 
 ### MathKernel auto-detection
 
@@ -173,9 +173,9 @@ and `DH`; all numerical defaults live in the Python source.
 
 | Parameter | Default | Description |
 |---|---|---|
-| `BBN_solver` | `"PRIMAT"` | BBN solver to use: `"PRIMAT"` or `"PyPRIMAT"` |
-| `PRIMAT_PATH` | `"PRIMAT"` | Path to PRIMAT directory (relative or absolute) |
-| `PyPRIMAT_PATH` | `"PyPRIMAT"` | Path to PyPRIMAT directory (relative or absolute) |
+| `BBN_solver` | `"PyPRIMAT"` | BBN solver to use: `"PyPRIMAT"` or `"PRIMAT"` |
+| `PRIMAT_PATH` | auto | Path to PRIMAT directory; overrides `$PRIMAT_DIR` and `../PRIMAT` |
+| `PyPRIMAT_PATH` | auto | Fallback path to PyPRIMAT directory if not installed via pip |
 | `MathKernelCommand` | `""` | Mathematica kernel command (auto-detected if empty) |
 | `ReducedNetwork` | `True` | Use reduced nuclear network (faster, recommended for MCMC) |
 | `DeltaNeff` | `0.0` | Extra relativistic species beyond SM neutrinos (`null` to vary) |
