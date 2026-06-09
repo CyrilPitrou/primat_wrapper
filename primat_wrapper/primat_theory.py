@@ -344,8 +344,8 @@ class PrimatTheory(Theory):
     def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
         try:
-            from pypr import PyPRclass
-            results = PyPRclass({
+            from pypr import PyPR
+            results = PyPR({
                 "Omegabh2":          omegabh2,
                 "DeltaNeff":         DeltaNeff,
                 "fEDE":              fEDE,

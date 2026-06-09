@@ -66,8 +66,8 @@ cobaya-run yaml/run_bbn_Nrelat.yaml
 cobaya-run yaml/run_bbn_EDE.yaml
 
 # Single-point test (no MCMC)
-python pythontest/test_primat_point.py
-python pythontest/test_primat_ede.py
+python tests/test_primat_point.py
+python tests/test_primat_ede.py
 ```
 
 PyPRIMAT has its own test suite (run from the `PyPRIMAT/` directory):
@@ -87,7 +87,7 @@ primat_wrapper/                         The installable Python package
   PrimatTheory.yaml     LaTeX labels for derived params (not numerical defaults)
   PrimatLikelihood.yaml LaTeX labels for derived params (not numerical defaults)
 yaml/                 Ready-to-use Cobaya run YAML files
-pythontest/           Quick single-point smoke tests using cobaya.model.get_model
+tests/                Quick single-point smoke tests using cobaya.model.get_model
 ```
 
 `PRIMAT/` and `PyPRIMAT/` are **not inside this repo**; see installation notes above.

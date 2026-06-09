@@ -36,7 +36,7 @@ Clone all three repositories into the same parent directory:
 cd somewhere/
 git clone git@github.com:CyrilPitrou/primat.git          PRIMAT
 git clone git@github.com:CyrilPitrou/pyprimat_private.git PyPRIMAT
-git clone git@github.com:CyrilPitrou/primat_wrapper.git   primat_tools
+git clone git@github.com:CyrilPitrou/primat_tools.git   primat_tools
 ```
 
 The layout should look like this:
@@ -173,6 +173,7 @@ and `DH`; all numerical defaults live in the Python source.
 
 | Parameter | Default | Description |
 |---|---|---|
+| `omegabh2` | — | **Required input**: physical baryon density Ωb h² (must be provided by the sampler or set as a fixed parameter) |
 | `BBN_solver` | `"PyPRIMAT"` | BBN solver to use: `"PyPRIMAT"` or `"PRIMAT"` |
 | `PRIMAT_PATH` | auto | Path to PRIMAT directory; overrides `$PRIMAT_DIR` and `../PRIMAT` |
 | `PyPRIMAT_PATH` | auto | Fallback path to PyPRIMAT directory if not installed via pip |
