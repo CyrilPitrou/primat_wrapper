@@ -144,24 +144,22 @@ analysis. Copy and modify one to suit your needs.
 ### CMB run YAMLs and the CLASS `path`
 
 The `yaml/run_bbn_cmb*.yaml` files (which combine `PrimatTheory` with the
-`classy` Boltzmann code) contain a hardcoded `path:` entry under `classy:`
-pointing at the machine-specific location of a CLASS source checkout, e.g.:
+`classy` Boltzmann code) have their `path:` entry under `classy:` commented
+out by default:
 
 ```yaml
 theory:
   classy:
-    path: /Users/pitrou/Cosmologie/class
+    # Uncomment and adjust if classy is not pip-installed in your environment.
+    # path: /Users/pitrou/Cosmologie/class
 ```
 
-You will need to update this to the location of **your own** CLASS
-installation before running these YAMLs.
-
-If you instead **comment out or remove** the `path:` line, Cobaya falls back
-to importing `classy` from your active Python environment (i.e. a
-pip-installed `classy`/CLASS wrapper). This works fine **if** `classy` is
-already installed and importable; otherwise Cobaya raises a
-`ComponentNotInstalledError` asking you to either install `classy` or provide
-a `path`.
+With `path:` commented out, Cobaya imports `classy` from your active Python
+environment, which works fine if you have `classy`/CLASS pip-installed (the
+common case). If `classy` is **not** installed in your environment, either
+install it, or uncomment `path:` and point it at your own CLASS source
+checkout — Cobaya raises a `ComponentNotInstalledError` if neither is
+available.
 
 ### MathKernel auto-detection
 
