@@ -13,6 +13,9 @@ dist/
 # OS junk
 .DS_Store
 
+# Local-only files: not committed to the repository
+CLAUDE.md
+
 # Cobaya run outputs
 chains/
 plots/
