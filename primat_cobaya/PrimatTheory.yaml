@@ -4,7 +4,11 @@
 # NOTE: simple options (PRIMAT_PATH, MathKernelCommand, etc.) are defined
 # as class attributes in primat_theory.py and must NOT be repeated here.
 # Only put here things that cannot be class attributes, i.e. the params block.
+#
+# omegabh2 is intentionally NOT declared here: each run YAML declares it in
+# the global params block (with its own prior/latex), and a 'derived: False'
+# entry may also be added under another theory's (e.g. classy's) params block.
+# Declaring it here too triggers Cobaya's "Parameter multiply defined, but
+# inconsistent info" error when those declarations don't match verbatim.
 
-params:
-  omegabh2:
-    latex: \Omega_b h^2
+params: {}
