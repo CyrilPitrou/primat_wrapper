@@ -346,15 +346,13 @@ class PrimatTheory(Theory):
         try:
             from pyprimat import PyPR
             results = PyPR({
-                "Omegabh2":          omegabh2,
-                "DeltaNeff":         DeltaNeff,
-                "fEDE":              fEDE,
-                "zcEDE":             zcEDE,
-                "wnEDE":             wnEDE,
-                "smallnet_flag":     self.ReducedNetwork,
-                "verbose_flag":      self.Verbose,
-                "compute_nTOp_flag": False,
-                "save_nTOp_flag":    False,
+                "Omegabh2":  omegabh2,
+                "DeltaNeff": DeltaNeff,
+                "fEDE":      fEDE,
+                "zcEDE":     zcEDE,
+                "wnEDE":     wnEDE,
+                "network":   "small" if self.ReducedNetwork else "medium",
+                "verbose":   self.Verbose,
             }).solve()
             return {"YHe": results['YPBBN'], "DH": results['DoH']}
         except Exception as e:

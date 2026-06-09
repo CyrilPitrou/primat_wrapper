@@ -15,6 +15,7 @@ dist/
 
 # Local-only files: not committed to the repository
 CLAUDE.md
+tests/*.ipynb
 
 # Cobaya run outputs
 chains/

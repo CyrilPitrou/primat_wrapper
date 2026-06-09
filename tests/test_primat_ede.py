@@ -79,9 +79,8 @@ def test_ede():
     print(f"  Δloglike            = {ll_ede - ll_std:+.4f}")
 
     # EDE raises the expansion rate during BBN, which must change Yp.
-    ok = np.isfinite(ll_ede) and np.isfinite(ll_std) and abs(dYHe) > 1e-6
-    print("\n" + ("PASS" if ok else "FAIL: EDE produced no abundance shift"))
-    return ok
+    assert np.isfinite(ll_ede) and np.isfinite(ll_std), "non-finite log-likelihood"
+    assert abs(dYHe) > 1e-6, f"EDE produced no abundance shift: ΔYHe={dYHe:+.2e}"
 
 
 if __name__ == "__main__":

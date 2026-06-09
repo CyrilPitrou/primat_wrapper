@@ -63,9 +63,7 @@ def test_single_point():
     print(f"  log-likelihood = {sum(result.loglikes):.4f}")
     print(f"  log-posterior  = {result.logpost:.4f}")
 
-    ok = np.isfinite(result.logpost)
-    print("\n" + ("PASS" if ok else "FAIL: non-finite posterior"))
-    return ok
+    assert np.isfinite(result.logpost), "non-finite posterior"
 
 
 if __name__ == "__main__":
