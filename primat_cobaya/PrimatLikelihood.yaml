@@ -1,12 +1,12 @@
 # PrimatLikelihood.yaml
 # ---------------------
 # Default parameters for PrimatLikelihood.
-# NOTE: simple options (YHe_mean, YHe_sigma, etc.) are defined as class
+# NOTE: simple options (Yp_mean, Yp_sigma, etc.) are defined as class
 # attributes in primat_likelihood.py and must NOT be repeated here.
 # Only put here things that cannot be class attributes, i.e. the params block.
 
 params:
-  YHe:
+  YpBBN:
     latex: Y_p^\mathrm{BBN}
   DH:
     latex: ({\rm D/H})

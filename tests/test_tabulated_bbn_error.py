@@ -35,8 +35,8 @@ BASE_CONFIG = {
 }
 
 LIKELIHOOD_BASE = {
-    "YHe_mean":  0.2458,
-    "YHe_sigma": 0.0013,
+    "Yp_mean":  0.2458,
+    "Yp_sigma": 0.0013,
     "DH_mean":   2.527e-5,
     "DH_sigma":  0.030e-5,
 }
@@ -107,14 +107,14 @@ def test_interpolated_sigmas_near_constants():
     sig_dh  = sig_DH_interp(pt)[0]
 
     # Fixed constants from the class defaults
-    YHe_PRIMAT_sigma = 0.0001091146
+    Yp_PRIMAT_sigma = 0.0001091146
     DH_PRIMAT_sigma  = 2.754096e-7
 
-    print(f"[sigmas]  sig_YHe: table={sig_yhe:.6e}  constant={YHe_PRIMAT_sigma:.6e}")
+    print(f"[sigmas]  sig_YHe: table={sig_yhe:.6e}  constant={Yp_PRIMAT_sigma:.6e}")
     print(f"[sigmas]  sig_DH:  table={sig_dh:.6e}  constant={DH_PRIMAT_sigma:.6e}")
 
-    assert abs(sig_yhe - YHe_PRIMAT_sigma) / YHe_PRIMAT_sigma < 0.05, \
-        f"sig_YHe from table ({sig_yhe:.6e}) deviates >5% from constant ({YHe_PRIMAT_sigma:.6e})"
+    assert abs(sig_yhe - Yp_PRIMAT_sigma) / Yp_PRIMAT_sigma < 0.05, \
+        f"sig_YHe from table ({sig_yhe:.6e}) deviates >5% from constant ({Yp_PRIMAT_sigma:.6e})"
     assert abs(sig_dh - DH_PRIMAT_sigma) / DH_PRIMAT_sigma < 0.05, \
         f"sig_DH from table ({sig_dh:.6e}) deviates >5% from constant ({DH_PRIMAT_sigma:.6e})"
 

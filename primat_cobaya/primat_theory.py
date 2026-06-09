@@ -2,21 +2,37 @@
 primat_theory.py
 ----------------
 Cobaya Theory class that runs a BBN code (PRIMAT via Mathematica, or PyPRIMAT
-via Python) and stores primordial nucleosynthesis abundances YHe (Yp) and DH
-(D/H) as derived parameters.
+via Python) and stores primordial nucleosynthesis abundances as derived params.
+
+Two helium conventions
+----------------------
+BBN solvers compute He-4 in two conventions that differ slightly due to nuclear
+mass corrections:
+
+  YpBBN  = 4 · Y(He4)   — "BBN convention"; this is what spectroscopic
+                           He-4 abundance measurements report.
+                           → consumed by PrimatLikelihood.
+
+  YHe    = YPCMB         — "CMB convention"; the actual mass fraction of
+                           helium that enters recombination physics.
+                           → fed into CLASS (or CAMB) via the 'YHe' parameter.
+
+The conversion is:
+  YHe = (He4Overma/4 · YpBBN) / (He4Overma/4 · YpBBN + HOverma · (1 − YpBBN))
+with  He4Overma = 4.0026032541  and  HOverma = 1.00782503223  (atomic mass units).
+For typical BBN values YHe is ~0.07 % smaller than YpBBN.
 
 Data flow
 ---------
   calculate() runs the BBN code and writes:
-      state["derived"] = {"YHe": ..., "DH": ...}
+      state["derived"] = {"YpBBN": ..., "YHe": ..., "DH": ...}
 
-  YHe and DH are declared via the class-level `output_params` attribute,
-  which is how Cobaya's _assign_params discovers at config-time which
-  component owns these derived quantities.
+  All three are declared via the class-level `output_params` attribute so
+  Cobaya's _assign_params knows which component owns them.
 
-  PrimatLikelihood receives them as keyword arguments to logp() because
-  they are also listed in the global params block of the run YAML with
-  no prior (= derived params).
+  PrimatLikelihood receives YpBBN and DH as keyword arguments to logp().
+  CLASS receives YHe because 'YHe' is a recognised CLASS parameter name and
+  the run YAML declares it with 'derived: False' in the classy params block.
 """
 
 from cobaya.theory import Theory
@@ -27,6 +43,18 @@ import csv
 import tempfile
 import time
 import shutil
+
+# Atomic masses (in unified atomic mass units) for the YPBBN → YPCMB conversion.
+# Source: same values used in PyPRIMAT/pyprimat/config.py.
+_He4Overma = 4.0026032541
+_HOverma   = 1.00782503223
+
+
+def _ypcmb_from_ypbbn(ypbbn):
+    """Convert BBN-convention He-4 fraction to CMB-convention He-4 fraction."""
+    a = (_He4Overma / 4.0) * ypbbn
+    return a / (a + _HOverma * (1.0 - ypbbn))
+
 
 # Standard locations to search for a valid MathKernel executable.
 MATHKERNEL_CANDIDATES = [
@@ -47,9 +75,10 @@ class PrimatTheory(Theory):
 
     # ------------------------------------------------------------------ #
     # Declare output params at CLASS level so Cobaya's _assign_params     #
-    # knows which component owns YHe and DH.                             #
+    # knows which component owns these derived quantities.               #
+    # YpBBN → PrimatLikelihood; YHe (=YPCMB) → CLASS; DH → both.       #
     # ------------------------------------------------------------------ #
-    output_params = ["YHe", "DH"]
+    output_params = ["YpBBN", "YHe", "DH"]
 
     # ------------------------------------------------------------------ #
     # Class-level attributes — overridden by YAML values automatically   #
@@ -242,25 +271,26 @@ class PrimatTheory(Theory):
         # Always populate state["derived"] — use NaN on failure so the
         # likelihood can detect it and return -inf cleanly.
         if results is None:
-            state["derived"] = {"YHe": np.nan, "DH": np.nan}
+            state["derived"] = {"YpBBN": np.nan, "YHe": np.nan, "DH": np.nan}
             return False
 
-        YHe = self._extract_YHe(results)
-        DH  = self._extract_DH(results)
+        YpBBN = self._extract_YpBBN(results)
+        YHe   = results.get("YHe")   # already converted by the runner
+        DH    = self._extract_DH(results)
 
-        if YHe is None or DH is None:
+        if YpBBN is None or YHe is None or DH is None:
             self.log.error(
-                f"Could not extract YHe or DH from BBN output. "
+                f"Could not extract YpBBN/YHe/DH from BBN output. "
                 f"Available keys: {list(results.keys())}"
             )
-            state["derived"] = {"YHe": np.nan, "DH": np.nan}
+            state["derived"] = {"YpBBN": np.nan, "YHe": np.nan, "DH": np.nan}
             return False
 
-        state["derived"] = {"YHe": YHe, "DH": DH}
+        state["derived"] = {"YpBBN": YpBBN, "YHe": YHe, "DH": DH}
 
         self.log.info(
             f"--- {self.BBN_solver} done in {time.time()-start_time:.1f}s ---  "
-            f"YHe={YHe:.8f}  D/H={DH:.6e}"
+            f"YpBBN={YpBBN:.8f}  YHe(CMB)={YHe:.8f}  D/H={DH:.6e}"
         )
         return True
 
@@ -335,6 +365,14 @@ class PrimatTheory(Theory):
 
             if self.Verbose:
                 self.log.info(f"PRIMAT keys: {list(results.keys())[:15]}")
+
+            # PRIMAT only emits the BBN-convention Yp (key "YP").
+            # Compute the CMB-convention value here and store it under "YHe"
+            # so calculate() can retrieve it the same way as for PyPRIMAT.
+            ypbbn = self._extract_YpBBN(results)
+            if ypbbn is not None:
+                results["YHe"] = _ypcmb_from_ypbbn(ypbbn)
+
             return results
 
         finally:
@@ -354,7 +392,12 @@ class PrimatTheory(Theory):
                 "network":   "small" if self.ReducedNetwork else "medium",
                 "verbose":   self.Verbose,
             }).solve()
-            return {"YHe": results['YPBBN'], "DH": results['DoH']}
+            # PyPRIMAT provides both conventions directly; use them as-is.
+            return {
+                "YpBBN": results['YPBBN'],
+                "YHe":   results['YPCMB'],  # CMB convention; fed into CLASS
+                "DH":    results['DoH'],
+            }
         except Exception as e:
             self.log.error(f"PyPRIMAT failed: {e}")
             return None
@@ -364,9 +407,9 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     @staticmethod
-    def _extract_YHe(results):
-        """Return Yp (He-4 mass fraction) from BBN output dict."""
-        for key in ["YP", "Yp", "YHe4", "Y_p", "YHe", "yp"]:
+    def _extract_YpBBN(results):
+        """Return Yp (BBN-convention He-4 mass fraction) from BBN output dict."""
+        for key in ["YpBBN", "YP", "Yp", "YHe4", "Y_p", "yp"]:
             if key in results:
                 return results[key]
         return None

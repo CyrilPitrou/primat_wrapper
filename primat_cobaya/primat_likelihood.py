@@ -6,10 +6,13 @@ primordial He-4 and D/H abundances provided by PrimatTheory.
 
 How the data flow works
 -----------------------
-PrimatTheory.calculate() stores YHe and DH in state["derived"].
-The likelihood declares them in get_requirements() so Cobaya builds
-the dependency graph (likelihood → theory).  Cobaya then injects them
-as keyword arguments to logp().
+PrimatTheory.calculate() stores YpBBN, YHe, and DH in state["derived"].
+This likelihood uses YpBBN (the BBN-convention He-4 mass fraction, what
+spectroscopic measurements report) and DH.  YHe (CMB convention) is used
+only by CLASS and is not consumed here.
+The likelihood declares YpBBN and DH in get_requirements() so Cobaya builds
+the dependency graph (likelihood → theory).  Cobaya then injects them as
+keyword arguments to logp().
 """
 
 from cobaya.likelihood import Likelihood
@@ -27,10 +30,10 @@ class PrimatLikelihood(Likelihood):
     arguments to logp().  This class does no PRIMAT I/O whatsoever.
     """
 
-    # Observed He-4 mass fraction (Yp)
-    YHe_mean:         float = 0.2458
-    YHe_sigma:        float = 0.0013
-    YHe_PRIMAT_sigma: float = 0.0001091146   # PRIMAT theoretical uncertainty (uniform mode)
+    # Observed He-4 mass fraction (Yp, BBN convention — compared against YpBBN)
+    Yp_mean:         float = 0.2458
+    Yp_sigma:        float = 0.0013
+    Yp_PRIMAT_sigma: float = 0.0001091146   # PRIMAT theoretical uncertainty (uniform mode)
 
     # Observed D/H ratio
     DH_mean:          float = 2.527e-5
@@ -58,15 +61,15 @@ class PrimatLikelihood(Likelihood):
 
     def _init_uniform(self):
         """Pre-build fixed Gaussian distributions (obs ⊕ constant theory error)."""
-        YHe_total_sigma = np.sqrt(self.YHe_sigma**2 + self.YHe_PRIMAT_sigma**2)
+        YHe_total_sigma = np.sqrt(self.Yp_sigma**2 + self.Yp_PRIMAT_sigma**2)
         DH_total_sigma  = np.sqrt(self.DH_sigma**2  + self.DH_PRIMAT_sigma**2)
 
-        self._YHe_norm = norm(loc=self.YHe_mean, scale=YHe_total_sigma)
+        self._YHe_norm = norm(loc=self.Yp_mean, scale=YHe_total_sigma)
         self._DH_norm  = norm(loc=self.DH_mean,  scale=DH_total_sigma)
 
         self.log.info(
             f"PrimatLikelihood initialised (uniform uncertainty):\n"
-            f"  YHe = {self.YHe_mean} ± {YHe_total_sigma:.6f} (obs ⊕ theory)\n"
+            f"  YHe = {self.Yp_mean} ± {YHe_total_sigma:.6f} (obs ⊕ theory)\n"
             f"  D/H = {self.DH_mean:.4e} ± {DH_total_sigma:.4e} (obs ⊕ theory)"
         )
 
@@ -104,39 +107,41 @@ class PrimatLikelihood(Likelihood):
             f"  Table: {n_delta} DeltaN values × {n_omega} omegabh2 values\n"
             f"  DeltaN range : {deltaN_vals[0]} – {deltaN_vals[-1]}\n"
             f"  omegabh2 range: {omegabh2_vals[0]} – {omegabh2_vals[-1]}\n"
-            f"  YHe obs sigma = {self.YHe_sigma}\n"
+            f"  YHe obs sigma = {self.Yp_sigma}\n"
             f"  D/H obs sigma = {self.DH_sigma:.4e}"
         )
 
     def get_requirements(self):
         """
-        Declare YHe and DH as requirements so Cobaya can build the
+        Declare YpBBN and DH as requirements so Cobaya can build the
         dependency graph: likelihood → PrimatTheory.
 
         This does NOT create a circular dependency because PrimatTheory
         declares them via the class-level `output_params` attribute, which
         Cobaya's _assign_params resolves before _set_dependencies_and_providers
-        runs.  By that point YHe and DH are known outputs of PrimatTheory,
-        so requesting them here simply wires the correct edge in the graph.
+        runs.  By that point YpBBN, YHe, and DH are known outputs of
+        PrimatTheory, so requesting YpBBN/DH here simply wires the correct
+        edge in the graph.
 
         Cobaya then injects them as keyword arguments into logp().
 
         In tabulated mode, omegabh2 and (optionally) DeltaNeff are also
         requested so their current values are available for interpolation.
         """
-        reqs = {"YHe": None, "DH": None}
+        reqs = {"YpBBN": None, "DH": None}
         if self.tabulated_BBN_error:
             reqs["omegabh2"] = None
             if self.DeltaNeff is None:
                 reqs["DeltaNeff"] = None
         return reqs
 
-    def logp(self, YHe, DH, **params_values):
+    def logp(self, YpBBN, DH, **params_values):
         """
-        YHe and DH are injected by Cobaya from PrimatTheory's derived output.
-        Returns -inf if the theory signalled failure via NaN.
+        YpBBN (BBN-convention He-4) and DH are injected by Cobaya from
+        PrimatTheory's derived output.  Returns -inf if the theory signalled
+        failure via NaN.
         """
-        if np.isnan(YHe) or np.isnan(DH):
+        if np.isnan(YpBBN) or np.isnan(DH):
             return -np.inf
 
         if self.tabulated_BBN_error:
@@ -149,19 +154,19 @@ class PrimatLikelihood(Likelihood):
             sig_YHe_theory = self._sig_YHe_interp(pt)[0]
             sig_DH_theory  = self._sig_DH_interp(pt)[0]
 
-            YHe_total_sigma = np.sqrt(self.YHe_sigma**2 + sig_YHe_theory**2)
+            YHe_total_sigma = np.sqrt(self.Yp_sigma**2 + sig_YHe_theory**2)
             DH_total_sigma  = np.sqrt(self.DH_sigma**2  + sig_DH_theory**2)
 
-            logp_YHe = norm.logpdf(YHe, loc=self.YHe_mean, scale=YHe_total_sigma)
-            logp_DH  = norm.logpdf(DH,  loc=self.DH_mean,  scale=DH_total_sigma)
+            logp_YHe = norm.logpdf(YpBBN, loc=self.Yp_mean, scale=YHe_total_sigma)
+            logp_DH  = norm.logpdf(DH,    loc=self.DH_mean,  scale=DH_total_sigma)
         else:
-            logp_YHe = self._YHe_norm.logpdf(YHe)
+            logp_YHe = self._YHe_norm.logpdf(YpBBN)
             logp_DH  = self._DH_norm.logpdf(DH)
 
         total = logp_YHe + logp_DH
 
         self.log.debug(
-            f"YHe={YHe:.8f}  D/H={DH:.6e}  "
+            f"YpBBN={YpBBN:.8f}  D/H={DH:.6e}  "
             f"logp_YHe={logp_YHe:.3f}  logp_DH={logp_DH:.3f}  total={total:.3f}"
         )
         return total

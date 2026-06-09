@@ -4,11 +4,11 @@
 #
 # Key design points
 # -----------------
-# • YHe and DH are declared in the global params block WITHOUT a prior.
+# • YpBBN and DH are declared in the global params block WITHOUT a prior.
 #   That is how Cobaya recognises them as derived parameters.
 # • PrimatTheory writes them into state["derived"] inside calculate().
 # • Cobaya automatically injects them as keyword arguments to logp().
-# • No output_params, no must_provide, no get_YHe/get_DH required.
+# • No output_params, no must_provide, no get_YpBBN/get_DH required.
 
 # ── Theory ───────────────────────────────────────────────────────────────────
 theory:
@@ -27,9 +27,9 @@ theory:
 likelihood:
   primat_cobaya.primat_likelihood.PrimatLikelihood:
 #    # No python_path needed: installed via `pip install -e .`
-    YHe_mean:         0.2458
-    YHe_sigma:        0.0013
-    YHe_PRIMAT_sigma: 0.0001091146
+    Yp_mean:         0.2458
+    Yp_sigma:        0.0013
+    Yp_PRIMAT_sigma: 0.0001091146
     DH_mean:          2.527e-5
     DH_sigma:         0.030e-5
     DH_PRIMAT_sigma:  2.754096e-7
@@ -62,9 +62,13 @@ params:
 
   # Derived parameters — NO prior block = Cobaya treats them as derived.
   # PrimatTheory writes these into state["derived"]; Cobaya routes them
-  # to logp(YHe, DH, ...) automatically.
-  YHe:
+  # to logp(YpBBN, DH, ...) automatically.
+  YpBBN:
     latex: Y_p
+
+  # YHe = YPCMB (CMB convention) — also computed by PrimatTheory, stored in chain.
+  YHe:
+    latex: Y_p^\mathrm{CMB}
   DH:
     latex: ({\rm D/H})
 

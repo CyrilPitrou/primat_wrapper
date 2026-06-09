@@ -10,8 +10,8 @@ measurements.
 
 | File | Cobaya class | Role |
 |---|---|---|
-| `primat_cobaya/primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
-| `primat_cobaya/primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
+| `primat_cobaya/primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YpBBN`, `YHe` (=YPCMB), and `DH` as derived parameters |
+| `primat_cobaya/primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YpBBN` and `DH` |
 | `primat_cobaya/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
 | `primat_cobaya/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
@@ -166,8 +166,21 @@ theory:
 
 All options are set as class attributes in the Python files and can be overridden
 in your run YAML. The `PrimatTheory.yaml` and `PrimatLikelihood.yaml` files are
-used only to provide Cobaya with LaTeX labels for the derived parameters `YHe`
-and `DH`; all numerical defaults live in the Python source.
+used only to provide Cobaya with LaTeX labels for the derived parameters `YpBBN`,
+`YHe`, and `DH`; all numerical defaults live in the Python source.
+
+### Two helium conventions
+
+`PrimatTheory` exposes He-4 in two conventions that differ slightly due to nuclear
+mass corrections (~0.07% for typical BBN values):
+
+| Parameter | Convention | Consumer |
+|---|---|---|
+| `YpBBN` | BBN: `4·Y(He4)` | `PrimatLikelihood` — compared against the spectroscopic measurement |
+| `YHe` | CMB: YPCMB | CLASS / CAMB — passed as the `YHe` input parameter for recombination |
+
+In runs that do not include a Boltzmann code (BBN-only YAMLs), `YHe` is still
+computed and written to the chain but is not consumed by any component.
 
 ### PrimatTheory options
 
@@ -189,12 +202,12 @@ and `DH`; all numerical defaults live in the Python source.
 
 | Parameter | Default | Description |
 |---|---|---|
-| `YHe_mean` | `0.2458` | Observed He-4 mass fraction |
-| `YHe_sigma` | `0.0013` | Observational uncertainty on He-4 |
+| `Yp_mean` | `0.2458` | Observed He-4 mass fraction |
+| `Yp_sigma` | `0.0013` | Observational uncertainty on He-4 |
 | `DH_mean` | `2.527e-5` | Observed D/H ratio |
 | `DH_sigma` | `0.030e-5` | Observational uncertainty on D/H |
 | `tabulated_BBN_error` | `True` | Use parameter-dependent theoretical uncertainty (see below) |
-| `YHe_PRIMAT_sigma` | `0.0001091146` | He-4 theoretical uncertainty (constant; used only when `tabulated_BBN_error: False`) |
+| `Yp_PRIMAT_sigma` | `0.0001091146` | He-4 theoretical uncertainty (constant; used only when `tabulated_BBN_error: False`) |
 | `DH_PRIMAT_sigma` | `2.754096e-7` | D/H theoretical uncertainty (constant; used only when `tabulated_BBN_error: False`) |
 | `DeltaNeff` | `0.0` | Fixed DeltaNeff value for the uncertainty table lookup (`null` if DeltaNeff is already varied by the sampler) |
 
@@ -202,7 +215,7 @@ Observational and theoretical uncertainties are always added in quadrature.
 
 ### Theoretical uncertainty modes
 
-The BBN theoretical uncertainty on `YHe` and `DH` arises from nuclear reaction
+The BBN theoretical uncertainty on `YpBBN` and `DH` arises from nuclear reaction
 rate errors and the neutron lifetime uncertainty, computed via Monte Carlo with
 PRIMAT.  It depends weakly but measurably on both the baryon density and the
 effective number of relativistic species.  `PrimatLikelihood` supports two modes:
@@ -217,7 +230,7 @@ This is the physically correct treatment and the recommended default.
 
 **Constant (`tabulated_BBN_error: False`)**
 
-A single pair of fixed values (`YHe_PRIMAT_sigma`, `DH_PRIMAT_sigma`) is used
+A single pair of fixed values (`Yp_PRIMAT_sigma`, `DH_PRIMAT_sigma`) is used
 for the full parameter space.  This approximation is adequate when the sampled
 parameters stay close to the standard cosmological values, and can be useful
 for quick cross-checks or to assess the sensitivity to this modelling choice.

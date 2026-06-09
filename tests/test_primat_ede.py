@@ -32,8 +32,8 @@ config = {
     },
     "likelihood": {
         "primat_cobaya.primat_likelihood.PrimatLikelihood": {
-            "YHe_mean": 0.2458,
-            "YHe_sigma": 0.0013,
+            "Yp_mean": 0.2458,
+            "Yp_sigma": 0.0013,
             "DH_mean": 2.527e-5,
             "DH_sigma": 0.030e-5,
         }
@@ -44,8 +44,9 @@ config = {
         # so the prior term cancels when comparing the two points).
         "fEDE": {"prior": {"min": 0.0, "max": 0.3}, "latex": "f_{\\rm EDE}"},
         "zcEDE": {"prior": {"min": 1.0e6, "max": 1.0e9}, "latex": "z_c^{\\rm EDE}"},
-        "YHe": {"latex": "Y_p"},
-        "DH": {"latex": "({\\rm D/H})"},
+        "YpBBN": {"latex": "Y_p^{\\rm BBN}"},
+        "YHe":   {"latex": "Y_p^{\\rm CMB}"},
+        "DH":    {"latex": "({\\rm D/H})"},
     },
 }
 
@@ -56,7 +57,7 @@ def evaluate(model, label, point):
     loglike = sum(result.loglikes)
     print(f"{label}")
     print(f"  fEDE={point['fEDE']:g}  zcEDE={point['zcEDE']:g}")
-    print(f"  YHe = {derived.get('YHe', float('nan')):.8f}"
+    print(f"  YpBBN = {derived.get('YpBBN', float('nan')):.8f}"
           f"   D/H = {derived.get('DH', float('nan')):.6e}"
           f"   loglike = {loglike:.4f}")
     return derived, loglike
@@ -74,13 +75,13 @@ def test_ede():
     d_ede, ll_ede = evaluate(model, "With EDE:", {"fEDE": 0.08, "zcEDE": 1e9})
     d_std, ll_std = evaluate(model, "No EDE:  ", {"fEDE": 0.0, "zcEDE": 1e8})
 
-    dYHe = d_ede["YHe"] - d_std["YHe"]
-    print(f"\n  ΔYHe (EDE - no EDE) = {dYHe:+.6e}")
-    print(f"  Δloglike            = {ll_ede - ll_std:+.4f}")
+    dYpBBN = d_ede["YpBBN"] - d_std["YpBBN"]
+    print(f"\n  ΔYpBBN (EDE - no EDE) = {dYpBBN:+.6e}")
+    print(f"  Δloglike              = {ll_ede - ll_std:+.4f}")
 
     # EDE raises the expansion rate during BBN, which must change Yp.
     assert np.isfinite(ll_ede) and np.isfinite(ll_std), "non-finite log-likelihood"
-    assert abs(dYHe) > 1e-6, f"EDE produced no abundance shift: ΔYHe={dYHe:+.2e}"
+    assert abs(dYpBBN) > 1e-6, f"EDE produced no abundance shift: ΔYpBBN={dYpBBN:+.2e}"
 
 
 if __name__ == "__main__":

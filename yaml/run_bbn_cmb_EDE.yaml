@@ -1,16 +1,26 @@
-# run_bbn_class.yaml
-# ------------------
-# Cobaya run using both PrimatTheory (BBN abundances) and CLASS (CMB/LSS).
+# run_bbn_cmb_EDE.yaml
+# --------------------
+# Cobaya run: PrimatTheory + CLASS, varying EDE parameters.
 #
 # Parameter flow
 # --------------
-#   omegabh2 ──► PrimatTheory ──► YHe ──► CLASS
-#                               └──► DH ──► PrimatLikelihood
+#   omegabh2 ──► PrimatTheory ──► YpBBN ──► PrimatLikelihood
+#   fEDE ──────┘                ├── YHe  ──► CLASS  (CMB convention)
+#   zcEDE ─────┘                └── DH   ──► PrimatLikelihood
 #   (+ all other CLASS params) ──► CLASS ──► [CMB likelihoods]
 #
-# YHe is the bridge: PRIMAT computes it from omegabh2 (and optionally
-# EDE/DeltaNeff), then CLASS uses it instead of its internal BBN table.
-# This enforces thermodynamic consistency between BBN and recombination.
+# Two helium conventions
+# ----------------------
+# BBN solvers compute He-4 in two slightly different conventions:
+#   YpBBN = 4·Y(He4)     "BBN convention" — what spectroscopic measurements
+#                         report.  This is what PrimatLikelihood compares
+#                         against the observed value.
+#   YHe   = YPCMB        "CMB convention" — the actual mass fraction entering
+#                         recombination.  This is what CLASS expects under the
+#                         parameter name 'YHe'.
+# The two differ by ~0.07% due to nuclear mass corrections:
+#   YHe = (m_He4/4·YpBBN) / (m_He4/4·YpBBN + m_H·(1−YpBBN))
+# PrimatTheory computes both and exposes them as separate derived parameters.
 #
 # How CLASS receives YHe
 # ----------------------
@@ -18,6 +28,7 @@
 # CLASS's Cobaya wrapper reads it as an input parameter because 'YHe'
 # is a recognised CLASS parameter name.  Cobaya wires this automatically:
 # it sees that CLASS requires YHe and that PrimatTheory provides it.
+# CLASS thus receives the CMB-convention YPCMB, which is correct.
 
 # ── Theories ─────────────────────────────────────────────────────────────────
 theory:
@@ -33,7 +44,6 @@ theory:
     zcEDE: null #
     wnEDE:  1.0
     DeltaNeff: 0. #We do not sample on DeltaNeff
-    provides: [YHe, DH]  # override CLASS's internal BBN table
 
   # 2. CLASS: uses YHe from PRIMAT instead of its internal BBN interpolation.
   # We must explicitly list YHe under classy's own params block so that
@@ -42,7 +52,7 @@ theory:
   # silently falls back to its internal BBN table.
   classy:
     params:
-      # Pull YHe from PrimatTheory's output and pass it into CLASS.
+      # Pull YHe (=YPCMB) from PrimatTheory's output and pass it into CLASS.
       # 'derived: False' tells Cobaya this is an input to CLASS, not an
       # output from it — this is what prevents CLASS from computing its own.
       YHe:
@@ -91,9 +101,9 @@ likelihood:
   # BBN likelihood: constrains omegabh2 via YHe and DH
   primat_cobaya.primat_likelihood.PrimatLikelihood:
 #    # No python_path needed: installed via `pip install -e .`
-    YHe_mean:         0.2458
-    YHe_sigma:        0.0013
-    YHe_PRIMAT_sigma: 0.0001091146
+    Yp_mean:         0.2458
+    Yp_sigma:        0.0013
+    Yp_PRIMAT_sigma: 0.0001091146
     DH_mean:          2.527e-5
     DH_sigma:         0.030e-5
     DH_PRIMAT_sigma:  2.754096e-7
@@ -184,10 +194,14 @@ params:
     proposal: 0.003
     latex: n_\mathrm{s}
 
-  # PrimatLikelihood reads both via get_requirements()/logp(YHe, DH, ...).
+  # PrimatLikelihood reads both via get_requirements()/logp(YpBBN, DH, ...).
 
-  YHe:
+  YpBBN:
     latex: Y_p^\mathrm{BBN}
+
+  # YHe = YPCMB (CMB convention) — fed into CLASS via its 'YHe' parameter.
+  YHe:
+    latex: Y_p^\mathrm{CMB}
 
   DH:
     latex: ({\rm D/H})
