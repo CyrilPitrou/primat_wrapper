@@ -141,6 +141,28 @@ analysis. Copy and modify one to suit your needs.
   Requires a Mathematica / Wolfram Engine installation and the PRIMAT code.
   Falls back to `PyPRIMAT` automatically if no valid MathKernel is found.
 
+### CMB run YAMLs and the CLASS `path`
+
+The `yaml/run_bbn_cmb*.yaml` files (which combine `PrimatTheory` with the
+`classy` Boltzmann code) contain a hardcoded `path:` entry under `classy:`
+pointing at the machine-specific location of a CLASS source checkout, e.g.:
+
+```yaml
+theory:
+  classy:
+    path: /Users/pitrou/Cosmologie/class
+```
+
+You will need to update this to the location of **your own** CLASS
+installation before running these YAMLs.
+
+If you instead **comment out or remove** the `path:` line, Cobaya falls back
+to importing `classy` from your active Python environment (i.e. a
+pip-installed `classy`/CLASS wrapper). This works fine **if** `classy` is
+already installed and importable; otherwise Cobaya raises a
+`ComponentNotInstalledError` asking you to either install `classy` or provide
+a `path`.
+
 ### MathKernel auto-detection
 
 If `MathKernelCommand` is left empty (the default), `PrimatTheory` tries the
