@@ -27,4 +27,4 @@ packages = ["primat_cobaya"]
 [tool.setuptools.package-data]
 # Ship the LaTeX-label default YAMLs alongside the classes so Cobaya can read
 # PrimatTheory.yaml / PrimatLikelihood.yaml via importlib.resources.
-primat_cobaya = ["*.yaml"]
+primat_cobaya = ["*.yaml", "data/*.dat"]

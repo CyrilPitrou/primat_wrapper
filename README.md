@@ -191,11 +191,39 @@ and `DH`; all numerical defaults live in the Python source.
 |---|---|---|
 | `YHe_mean` | `0.2458` | Observed He-4 mass fraction |
 | `YHe_sigma` | `0.0013` | Observational uncertainty on He-4 |
-| `YHe_PRIMAT_sigma` | `0.0001091146` | PRIMAT theoretical uncertainty on He-4 |
 | `DH_mean` | `2.527e-5` | Observed D/H ratio |
 | `DH_sigma` | `0.030e-5` | Observational uncertainty on D/H |
-| `DH_PRIMAT_sigma` | `2.754096e-7` | PRIMAT theoretical uncertainty on D/H |
+| `tabulated_BBN_error` | `True` | Use parameter-dependent theoretical uncertainty (see below) |
+| `YHe_PRIMAT_sigma` | `0.0001091146` | He-4 theoretical uncertainty (constant; used only when `tabulated_BBN_error: False`) |
+| `DH_PRIMAT_sigma` | `2.754096e-7` | D/H theoretical uncertainty (constant; used only when `tabulated_BBN_error: False`) |
+| `DeltaNeff` | `0.0` | Fixed DeltaNeff value for the uncertainty table lookup (`null` if DeltaNeff is already varied by the sampler) |
 
-Observational and theoretical uncertainties are added in quadrature.
-Nuclear reaction errors are assumed not to depend on the baryon density
-(approximately correct if the baryon density is not far from the standard value).
+Observational and theoretical uncertainties are always added in quadrature.
+
+### Theoretical uncertainty modes
+
+The BBN theoretical uncertainty on `YHe` and `DH` arises from nuclear reaction
+rate errors and the neutron lifetime uncertainty, computed via Monte Carlo with
+PRIMAT.  It depends weakly but measurably on both the baryon density and the
+effective number of relativistic species.  `PrimatLikelihood` supports two modes:
+
+**Tabulated (default — `tabulated_BBN_error: True`)**
+
+The theoretical uncertainty is read from a pre-computed table
+(`primat_cobaya/data/PRIMAT_Yp_DH_ErrorMC_100_2024.dat`) and bilinearly
+interpolated at the current `(omegabh2, DeltaNeff)` values each MCMC step.
+The table covers `omegabh2` ∈ [0.005, 0.040] and `DeltaNeff` ∈ [−3, 7].
+This is the physically correct treatment and the recommended default.
+
+**Constant (`tabulated_BBN_error: False`)**
+
+A single pair of fixed values (`YHe_PRIMAT_sigma`, `DH_PRIMAT_sigma`) is used
+for the full parameter space.  This approximation is adequate when the sampled
+parameters stay close to the standard cosmological values, and can be useful
+for quick cross-checks or to assess the sensitivity to this modelling choice.
+
+```yaml
+likelihood:
+  primat_cobaya.primat_likelihood.PrimatLikelihood:
+    tabulated_BBN_error: False   # use constant theoretical uncertainties
+```
