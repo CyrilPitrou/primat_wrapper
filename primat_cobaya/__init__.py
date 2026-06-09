@@ -1,17 +1,17 @@
 """
-primat_wrapper
+primat_cobaya
 ==============
 A Cobaya theory+likelihood package wrapping the PRIMAT / PyPRIMAT Big Bang
 Nucleosynthesis solvers.
 
 The two Cobaya components are exposed here for convenience, so they can be
-imported as ``from primat_wrapper import PrimatTheory, PrimatLikelihood``.
+imported as ``from primat_cobaya import PrimatTheory, PrimatLikelihood``.
 In Cobaya YAML files, reference them by their fully-qualified dotted path:
 
     theory:
-      primat_wrapper.primat_theory.PrimatTheory:
+      primat_cobaya.primat_theory.PrimatTheory:
     likelihood:
-      primat_wrapper.primat_likelihood.PrimatLikelihood:
+      primat_cobaya.primat_likelihood.PrimatLikelihood:
 """
 
 from .primat_theory import PrimatTheory

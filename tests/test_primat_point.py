@@ -24,7 +24,7 @@ OMEGABH2 = 0.022425  # Planck-like test value; the only parameter BBN depends on
 config = {
     "debug": False,
     "theory": {
-        "primat_wrapper.primat_theory.PrimatTheory": {
+        "primat_cobaya.primat_theory.PrimatTheory": {
             "BBN_solver": BBN_SOLVER,
             "ReducedNetwork": False,
             "DeltaNeff": 0.0,
@@ -32,7 +32,7 @@ config = {
         }
     },
     "likelihood": {
-        "primat_wrapper.primat_likelihood.PrimatLikelihood": {
+        "primat_cobaya.primat_likelihood.PrimatLikelihood": {
             "YHe_mean": 0.2458,
             "YHe_sigma": 0.0013,
             "DH_mean": 2.527e-5,

@@ -1,4 +1,4 @@
-# primat_wrapper
+# primat_cobaya
 
 A [Cobaya](https://cobaya.readthedocs.io) theory+likelihood package that computes
 primordial nucleosynthesis abundances by calling either the Mathematica
@@ -10,10 +10,10 @@ measurements.
 
 | File | Cobaya class | Role |
 |---|---|---|
-| `primat_wrapper/primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
-| `primat_wrapper/primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
-| `primat_wrapper/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
-| `primat_wrapper/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
+| `primat_cobaya/primat_theory.py` | `PrimatTheory` | Runs PRIMAT or PyPRIMAT, provides `YHe` and `DH` as derived parameters |
+| `primat_cobaya/primat_likelihood.py` | `PrimatLikelihood` | Gaussian log-likelihood from `YHe` and `DH` |
+| `primat_cobaya/PrimatTheory.yaml` | — | Cobaya `params` defaults for `PrimatTheory` |
+| `primat_cobaya/PrimatLikelihood.yaml` | — | Cobaya `params` defaults for `PrimatLikelihood` |
 | `yaml/run_bbn.yaml` | — | Example run: BBN, baryons only |
 | `yaml/run_bbn_Nrelat.yaml` | — | Example run: BBN, baryons and DeltaNeff = Neff − 3.044 |
 
@@ -48,7 +48,7 @@ somewhere/
 └── primat_tools/   ← this repository
     ├── pyproject.toml
     ├── README.md
-    ├── primat_wrapper/
+    ├── primat_cobaya/
     └── yaml/
 ```
 
@@ -70,7 +70,7 @@ pip install -e .
 ```
 
 Editable mode (`-e`) is required so that the YAML files inside
-`primat_wrapper/` are found correctly by Cobaya via `importlib.resources`.
+`primat_cobaya/` are found correctly by Cobaya via `importlib.resources`.
 
 On macOS with a Homebrew-managed Python, add `--break-system-packages` to both
 `pip install` commands above.
@@ -96,13 +96,13 @@ The wrapper resolves the PRIMAT directory in this order:
 ```bash
 python3 -c "
 import inspect, pprint
-from primat_wrapper.primat_theory import PrimatTheory
+from primat_cobaya.primat_theory import PrimatTheory
 print('package :', inspect.getmodule(PrimatTheory).__package__)
 pprint.pprint(PrimatTheory.get_defaults())
 "
 ```
 
-You should see `package: primat_wrapper` and a non-empty defaults dict.
+You should see `package: primat_cobaya` and a non-empty defaults dict.
 
 ## Running
 
@@ -110,13 +110,13 @@ Reference the classes using their fully-qualified module names:
 
 ```yaml
 theory:
-  primat_wrapper.primat_theory.PrimatTheory:
+  primat_cobaya.primat_theory.PrimatTheory:
     BBN_solver: "PyPRIMAT"    # default; use "PRIMAT" for the Mathematica solver
     MathKernelCommand: ""     # leave empty for auto-detection (PRIMAT only)
     Verbose: False
 
 likelihood:
-  primat_wrapper.primat_likelihood.PrimatLikelihood:
+  primat_cobaya.primat_likelihood.PrimatLikelihood:
 ```
 
 Then run with Cobaya using one of the example YAML files in the `yaml/` folder:
@@ -158,7 +158,7 @@ To override, set `MathKernelCommand` explicitly in your run YAML:
 
 ```yaml
 theory:
-  primat_wrapper.primat_theory.PrimatTheory:
+  primat_cobaya.primat_theory.PrimatTheory:
     MathKernelCommand: "/path/to/your/MathKernel"
 ```
 

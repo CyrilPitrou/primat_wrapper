@@ -12,7 +12,7 @@
 
 # ── Theory ───────────────────────────────────────────────────────────────────
 theory:
-  primat_wrapper.primat_theory.PrimatTheory:
+  primat_cobaya.primat_theory.PrimatTheory:
 #    # No python_path needed: installed via `pip install -e .`
 #    PRIMAT_PATH: "PRIMAT"
     BBN_solver: "PyPRIMAT"
@@ -26,7 +26,7 @@ theory:
 
 # ── Likelihood ───────────────────────────────────────────────────────────────
 likelihood:
-  primat_wrapper.primat_likelihood.PrimatLikelihood:
+  primat_cobaya.primat_likelihood.PrimatLikelihood:
 #    # No python_path needed: installed via `pip install -e .`
     YHe_mean:         0.2458
     YHe_sigma:        0.0013

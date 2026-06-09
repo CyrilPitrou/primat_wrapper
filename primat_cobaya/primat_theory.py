@@ -72,7 +72,7 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     def initialize(self):
-        # base = the primat_tools repo root (parent of the primat_wrapper/ package).
+        # base = the primat_tools repo root (parent of the primat_cobaya/ package).
         # Relative PRIMAT_PATH values from the YAML are resolved against it.
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
