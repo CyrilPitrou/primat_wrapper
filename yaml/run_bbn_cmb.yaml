@@ -39,7 +39,7 @@ theory:
 #    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
-    Verbose: True
+    Verbose: False
     fEDE:   0.0
     zcEDE:  1.0e8
     wnEDE:  1.0
@@ -72,7 +72,7 @@ theory:
         derived: False
 #      N_ur:
 #        derived: False
-    path: /nethome/pitrou/class_tam
+    path: /Users/pitrou/Cosmologie/class
     extra_args:
       output: tCl,pCl,lCl,mPk
       lensing: yes

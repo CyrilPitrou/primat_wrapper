@@ -39,7 +39,7 @@ theory:
 #    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
-    Verbose: True
+    Verbose: False
     fEDE: null #We sample on EDE parameters f and zc
     zcEDE: null #
     wnEDE:  1.0

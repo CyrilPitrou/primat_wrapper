@@ -39,7 +39,7 @@ theory:
 #    PRIMAT_PATH: "PRIMAT"
 #    MathKernelCommand: "math13"
     ReducedNetwork: True
-    Verbose: True
+    Verbose: False
     fEDE: 0. #No EDE
     zcEDE: 1e8
     wnEDE:  1.0
