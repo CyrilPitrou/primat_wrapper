@@ -155,10 +155,10 @@ class PrimatTheory(Theory):
         self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
 
     def _init_pyprimat(self, base):
-        """Verify that pypr is importable. Prefers the installed package; falls back to PyPRIMAT_PATH."""
+        """Verify that pyprimat is importable. Prefers the installed package; falls back to PyPRIMAT_PATH."""
         import sys
         try:
-            import pypr  # noqa: F401 — just checking it's importable
+            import pyprimat  # noqa: F401 — just checking it's importable
             self.log.info("PrimatTheory initialised with PyPRIMAT (installed package).")
             return
         except ImportError:
@@ -172,7 +172,7 @@ class PrimatTheory(Theory):
 
         if not os.path.isdir(self.PyPRIMAT_PATH):
             raise FileNotFoundError(
-                f"pypr is not installed and PyPRIMAT directory not found at {self.PyPRIMAT_PATH}. "
+                f"pyprimat is not installed and PyPRIMAT directory not found at {self.PyPRIMAT_PATH}. "
                 "Install PyPRIMAT with: pip install -e /path/to/PyPRIMAT"
             )
         if self.PyPRIMAT_PATH not in sys.path:
@@ -344,7 +344,7 @@ class PrimatTheory(Theory):
     def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
         try:
-            from pypr import PyPR
+            from pyprimat import PyPR
             results = PyPR({
                 "Omegabh2":          omegabh2,
                 "DeltaNeff":         DeltaNeff,

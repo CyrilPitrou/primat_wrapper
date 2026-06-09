@@ -21,7 +21,7 @@ measurements.
 
 - Python ≥ 3.10
 - [Cobaya](https://cobaya.readthedocs.io) ≥ 3.5
-- [PyPRIMAT](https://github.com/CyrilPitrou/pyprimat_private) (pure-Python BBN solver, default)
+- [PyPRIMAT](https://github.com/CyrilPitrou/pyprimat) (pure-Python BBN solver, default)
 - Optionally: Mathematica / Wolfram Engine with a working kernel command
   (`MathKernel`, `math13`, etc.) and the
   [PRIMAT](https://www2.iap.fr/users/pitrou/primat.htm) Mathematica code
@@ -35,7 +35,7 @@ Clone all three repositories into the same parent directory:
 ```bash
 cd somewhere/
 git clone git@github.com:CyrilPitrou/primat.git          PRIMAT
-git clone git@github.com:CyrilPitrou/pyprimat_private.git PyPRIMAT
+git clone git@github.com:CyrilPitrou/pyprimat.git PyPRIMAT
 git clone git@github.com:CyrilPitrou/primat_tools.git   primat_tools
 ```
 
@@ -60,7 +60,7 @@ The three repos are **independent**; none lives inside another.
 pip install -e ../PyPRIMAT
 ```
 
-This makes `pypr` importable system-wide — no path configuration needed for
+This makes `pyprimat` importable system-wide — no path configuration needed for
 the Python solver.
 
 ### 3. Install this wrapper

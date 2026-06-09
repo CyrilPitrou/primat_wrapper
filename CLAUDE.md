@@ -39,7 +39,7 @@ The Mathematica PRIMAT code is found in this order:
 
 ### PyPRIMAT path discovery
 
-`from pypr import PyPRclass` is tried first (works when installed via pip).
+`from pyprimat import PyPR` is tried first (works when installed via pip).
 If not installed, `PyPRIMAT_PATH` in the YAML is used as a `sys.path` fallback.
 
 ## Testing after changes
@@ -98,7 +98,7 @@ e.g. `primat_wrapper.primat_theory.PrimatTheory`.
 ### Data flow
 
 1. Cobaya calls `PrimatTheory.calculate()` with the current `omegabh2` (and optionally `DeltaNeff`, `fEDE`, `zcEDE`, `wnEDE`).
-2. The theory runs either PRIMAT via MathKernel subprocess (writing a temp CSV) or calls `PyPR.PyPRclass(...).solve()` directly.
+2. The theory runs either PRIMAT via MathKernel subprocess (writing a temp CSV) or calls `PyPR({...}).solve()` directly.
 3. Results are stored in `state["derived"] = {"YHe": ..., "DH": ...}`.
 4. Cobaya injects `YHe` and `DH` as keyword arguments into `PrimatLikelihood.logp()`.
 5. The likelihood returns the sum of two Gaussian log-PDFs (obs uncertainty ⊕ theoretical uncertainty in quadrature).
@@ -115,4 +115,4 @@ e.g. `primat_wrapper.primat_theory.PrimatTheory`.
 
 ### PyPRIMAT internals
 
-See `../PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `pypr.PyPRclass(params).solve()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoH` (the raw D/H ratio, not scaled by 10⁵).
+See `../PyPRIMAT/CLAUDE.md` for a full description. The entry point used by `PrimatTheory` is `pyprimat.PyPR(params).solve()`, which returns a dict containing `YPBBN` (He-4 mass fraction) and `DoH` (the raw D/H ratio, not scaled by 10⁵).
