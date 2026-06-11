@@ -14,8 +14,6 @@
 theory:
   primat_cobaya.primat_theory.PrimatTheory:
 #    # No python_path needed: installed via `pip install -e .`
-#    PRIMAT_PATH: "PRIMAT"
-#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
     fEDE:   0.0      # set to null to vary

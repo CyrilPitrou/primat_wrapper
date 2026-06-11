@@ -1,7 +1,6 @@
-# testpy.yaml
-# -----------
-# Smoke test of the PyPRIMAT (pure-Python) solver path.
-# Cobaya run configuration: PrimatTheory + PrimatLikelihood.
+# test.yaml
+# ---------
+# Smoke test of the PrimatTheory + PrimatLikelihood pair (PyPRIMAT solver).
 #
 # Key design points
 # -----------------
@@ -15,9 +14,6 @@
 theory:
   primat_cobaya.primat_theory.PrimatTheory:
 #    # No python_path needed: installed via `pip install -e .`
-#    PRIMAT_PATH: "PRIMAT"
-    BBN_solver: "PyPRIMAT"
-#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
     fEDE:   null      # set to null to vary
@@ -113,6 +109,6 @@ sampler:
     output_every: 10s
 
 # ── Output ───────────────────────────────────────────────────────────────────
-output: chains/testpy
+output: chains/test
 force: True
 debug: True

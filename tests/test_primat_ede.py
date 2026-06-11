@@ -13,14 +13,12 @@ Usage:
 import numpy as np
 from cobaya.model import get_model
 
-BBN_SOLVER = "PyPRIMAT"   # runs without Mathematica
 OMEGABH2 = 0.022425
 
 config = {
     "debug": False,
     "theory": {
         "primat_cobaya.primat_theory.PrimatTheory": {
-            "BBN_solver": BBN_SOLVER,
             "ReducedNetwork": False,
             "DeltaNeff": 0.0,
             "wnEDE": 1.0,
@@ -65,7 +63,7 @@ def evaluate(model, label, point):
 
 def test_ede():
     print("=" * 70)
-    print(f"EDE smoke test  (solver={BBN_SOLVER}, omegabh2={OMEGABH2})")
+    print(f"EDE smoke test  (omegabh2={OMEGABH2})")
     print("=" * 70)
 
     model = get_model(config)

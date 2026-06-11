@@ -21,7 +21,6 @@ BASE_CONFIG = {
     "debug": False,
     "theory": {
         "primat_cobaya.primat_theory.PrimatTheory": {
-            "BBN_solver": "PyPRIMAT",
             "ReducedNetwork": False,
             "DeltaNeff": DELTANEFF,
             "Verbose": False,

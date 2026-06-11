@@ -14,18 +14,12 @@ Usage:
 import numpy as np
 from cobaya.model import get_model
 
-# Use the pure-Python PyPRIMAT solver so the test runs without Mathematica.
-# Set to "PRIMAT" to exercise the MathKernel path (auto-falls back to PyPRIMAT
-# if no working kernel is found).
-BBN_SOLVER = "PyPRIMAT"
-
 OMEGABH2 = 0.022425  # Planck-like test value; the only parameter BBN depends on
 
 config = {
     "debug": False,
     "theory": {
         "primat_cobaya.primat_theory.PrimatTheory": {
-            "BBN_solver": BBN_SOLVER,
             "ReducedNetwork": False,
             "DeltaNeff": 0.0,
             "Verbose": False,
@@ -53,7 +47,7 @@ config = {
 
 def test_single_point():
     print("=" * 70)
-    print(f"Single-point test  (solver={BBN_SOLVER}, omegabh2={OMEGABH2})")
+    print(f"Single-point test  (omegabh2={OMEGABH2})")
     print("=" * 70)
 
     model = get_model(config)

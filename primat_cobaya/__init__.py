@@ -1,8 +1,8 @@
 """
 primat_cobaya
 ==============
-A Cobaya theory+likelihood package wrapping the PRIMAT / PyPRIMAT Big Bang
-Nucleosynthesis solvers.
+A Cobaya theory+likelihood package wrapping the PyPRIMAT Big Bang
+Nucleosynthesis solver.
 
 The two Cobaya components are exposed here for convenience, so they can be
 imported as ``from primat_cobaya import PrimatTheory, PrimatLikelihood``.

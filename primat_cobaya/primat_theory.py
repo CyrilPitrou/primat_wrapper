@@ -1,12 +1,12 @@
 """
 primat_theory.py
 ----------------
-Cobaya Theory class that runs a BBN code (PRIMAT via Mathematica, or PyPRIMAT
-via Python) and stores primordial nucleosynthesis abundances as derived params.
+Cobaya Theory class that runs PyPRIMAT and stores primordial nucleosynthesis
+abundances as derived params.
 
 Two helium conventions
 ----------------------
-BBN solvers compute He-4 in two conventions that differ slightly due to nuclear
+PyPRIMAT computes He-4 in two conventions that differ slightly due to nuclear
 mass corrections:
 
   YpBBN  = 4 · Y(He4)   — "BBN convention"; this is what spectroscopic
@@ -17,14 +17,12 @@ mass corrections:
                            helium that enters recombination physics.
                            → fed into CLASS (or CAMB) via the 'YHe' parameter.
 
-The conversion is:
-  YHe = (He4Overma/4 · YpBBN) / (He4Overma/4 · YpBBN + HOverma · (1 − YpBBN))
-with  He4Overma = 4.0026032541  and  HOverma = 1.00782503223  (atomic mass units).
-For typical BBN values YHe is ~0.07 % smaller than YpBBN.
+For typical BBN values YHe is ~0.07 % smaller than YpBBN. PyPRIMAT returns
+both conventions directly.
 
 Data flow
 ---------
-  calculate() runs the BBN code and writes:
+  calculate() runs PyPRIMAT and writes:
       state["derived"] = {"YpBBN": ..., "YHe": ..., "DH": ...}
 
   All three are declared via the class-level `output_params` attribute so
@@ -38,39 +36,13 @@ Data flow
 from cobaya.theory import Theory
 import numpy as np
 import os
-import subprocess
-import csv
-import tempfile
 import time
-import shutil
-
-# Atomic masses (in unified atomic mass units) for the YPBBN → YPCMB conversion.
-# Source: same values used in PyPRIMAT/pyprimat/config.py.
-_He4Overma = 4.0026032541
-_HOverma   = 1.00782503223
-
-
-def _ypcmb_from_ypbbn(ypbbn):
-    """Convert BBN-convention He-4 fraction to CMB-convention He-4 fraction."""
-    a = (_He4Overma / 4.0) * ypbbn
-    return a / (a + _HOverma * (1.0 - ypbbn))
-
-
-# Standard locations to search for a valid MathKernel executable.
-MATHKERNEL_CANDIDATES = [
-    "/Applications/Wolfram.app/Contents/MacOS/MathKernel",
-    "/Applications/Mathematica.app/Contents/MacOS/MathKernel",
-    "/usr/local/Wolfram/Mathematica/12.0/Executables/MathKernel",
-    "math13",
-    "MathKernel",
-]
 
 
 class PrimatTheory(Theory):
     """
-    Theory class that calls PRIMAT (via Mathematica) or PyPRIMAT (pure Python)
-    and provides primordial abundances YHe (Yp mass fraction) and DH (D/H ratio)
-    as Cobaya derived parameters.
+    Theory class that calls PyPRIMAT and provides primordial abundances
+    YHe (Yp mass fraction) and DH (D/H ratio) as Cobaya derived parameters.
     """
 
     # ------------------------------------------------------------------ #
@@ -83,10 +55,7 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
     # Class-level attributes — overridden by YAML values automatically   #
     # ------------------------------------------------------------------ #
-    PRIMAT_PATH: str = ""
     PyPRIMAT_PATH: str = ""
-    BBN_solver: str = "PyPRIMAT"  # "PyPRIMAT" or "PRIMAT"
-    MathKernelCommand: str = ""  # auto-detected if empty
     ReducedNetwork: bool = True
     DeltaNeff: float = 0.0        # set to None to vary via sampler
     Verbose: bool = False
@@ -102,86 +71,9 @@ class PrimatTheory(Theory):
 
     def initialize(self):
         # base = the primat_tools repo root (parent of the primat_cobaya/ package).
-        # Relative PRIMAT_PATH values from the YAML are resolved against it.
+        # Relative PyPRIMAT_PATH values from the YAML are resolved against it.
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-        if self.BBN_solver == "PRIMAT":
-            self.log.info("Attempting to use PRIMAT (Mathematica) as BBN solver.")
-            self._init_primat(base)
-
-        # _init_primat may fall back to "PyPRIMAT" if MathKernel is unavailable
-        if self.BBN_solver == "PyPRIMAT":
-            self._init_pyprimat(base)
-
-    def _find_mathkernel(self):
-        """
-        Search for a valid MathKernel executable.
-
-        If MathKernelCommand is set by the user, try it first.  If it is
-        not valid, fall through and search MATHKERNEL_CANDIDATES in order,
-        skipping the user-supplied command (already tried).  Return the
-        first valid command found, or None if none works.
-        """
-        user_cmd = self.MathKernelCommand
-
-        # Build the search list: user command first (if given), then candidates,
-        # excluding the user command from the tail to avoid testing it twice.
-        search = []
-        if user_cmd:
-            search.append(user_cmd)
-        search += [c for c in MATHKERNEL_CANDIDATES if c != user_cmd]
-
-        for candidate in search:
-            resolved = shutil.which(candidate) or candidate
-            if self._is_valid_mathkernel(resolved):
-                if candidate != user_cmd:
-                    self.log.info(
-                        f"MathKernelCommand '{user_cmd}' not valid; "
-                        f"found working kernel at '{resolved}'."
-                    )
-                return resolved
-
-        return None
-
-    def _init_primat(self, base):
-        """Set up PRIMAT paths and find a valid MathKernel. Falls back to PyPRIMAT on failure."""
-
-        # Resolve PRIMAT_PATH: explicit YAML value → $PRIMAT_DIR env var → sibling ../PRIMAT
-        if not self.PRIMAT_PATH:
-            env_dir = os.environ.get("PRIMAT_DIR", "")
-            if env_dir:
-                self.PRIMAT_PATH = env_dir
-            else:
-                self.PRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PRIMAT"))
-        elif not os.path.isabs(self.PRIMAT_PATH):
-            self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
-
-        self.primat_script = os.path.join(
-            self.PRIMAT_PATH, "PythonInterface", "PyPRIMAT_FinalAbundances.m"
-        )
-        if not os.path.exists(self.primat_script):
-            self.log.warning(
-                f"PRIMAT script not found at {self.primat_script}. "
-                "Falling back to PyPRIMAT."
-            )
-            self.BBN_solver = "PyPRIMAT"
-            return
-
-        # Find a working MathKernel (tries user command first, then candidates)
-        found = self._find_mathkernel()
-        if not found:
-            self.log.warning(
-                "No valid MathKernel found in any of the standard locations. "
-                "Falling back to PyPRIMAT."
-            )
-            self.MathKernelCommand = ""
-            self.BBN_solver = "PyPRIMAT"
-            return
-
-        self.MathKernelCommand = found
-        self.log.info("PrimatTheory initialised with PRIMAT.")
-        self.log.info(f"  PRIMAT script : {self.primat_script}")
-        self.log.info(f"  MathKernel    : {self.MathKernelCommand}")
+        self._init_pyprimat(base)
 
     def _init_pyprimat(self, base):
         """Verify that pyprimat is importable. Prefers the installed package; falls back to PyPRIMAT_PATH."""
@@ -209,21 +101,6 @@ class PrimatTheory(Theory):
         self.log.info("PrimatTheory initialised with PyPRIMAT (path fallback).")
         self.log.info(f"  PyPRIMAT path : {self.PyPRIMAT_PATH}")
 
-    @staticmethod
-    def _is_valid_mathkernel(cmd):
-        """Return True if cmd resolves to a working MathKernel executable."""
-        resolved = shutil.which(cmd) or cmd
-        if not os.path.isfile(resolved) or not os.access(resolved, os.X_OK):
-            return False
-        try:
-            result = subprocess.run(
-                [resolved, "-version"],
-                capture_output=True, text=True, timeout=10
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
-
     def get_requirements(self):
         """
         Declare which sampler parameters this theory reads.
@@ -243,7 +120,7 @@ class PrimatTheory(Theory):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
         """
-        Run the BBN code for the current parameter point and store abundances
+        Run PyPRIMAT for the current parameter point and store abundances
         in state["derived"] so Cobaya routes them to the likelihood and
         writes them to the chain.
         """
@@ -256,17 +133,13 @@ class PrimatTheory(Theory):
         wnEDE     = self.wnEDE     if self.wnEDE     is not None else self.provider.get_param("wnEDE")
 
         self.log.info(
-            f"--- Running {self.BBN_solver} ---  "
+            f"--- Running PyPRIMAT ---  "
             f"omegabh2={omegabh2}  DeltaNeff={DeltaNeff}  "
             f"fEDE={fEDE}  zcEDE={zcEDE}  wnEDE={wnEDE}"
         )
 
-        if self.BBN_solver == "PRIMAT":
-            results = self._run_bbn_primat(omegabh2, DeltaNeff=DeltaNeff,
-                                           fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
-        else:
-            results = self._run_bbn_pyprimat(omegabh2, DeltaNeff=DeltaNeff,
-                                             fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
+        results = self._run_bbn_pyprimat(omegabh2, DeltaNeff=DeltaNeff,
+                                         fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
 
         # Always populate state["derived"] — use NaN on failure so the
         # likelihood can detect it and return -inf cleanly.
@@ -274,9 +147,9 @@ class PrimatTheory(Theory):
             state["derived"] = {"YpBBN": np.nan, "YHe": np.nan, "DH": np.nan}
             return False
 
-        YpBBN = self._extract_YpBBN(results)
-        YHe   = results.get("YHe")   # already converted by the runner
-        DH    = self._extract_DH(results)
+        YpBBN = results.get("YpBBN")
+        YHe   = results.get("YHe")   # CMB convention
+        DH    = results.get("DH")
 
         if YpBBN is None or YHe is None or DH is None:
             self.log.error(
@@ -289,95 +162,14 @@ class PrimatTheory(Theory):
         state["derived"] = {"YpBBN": YpBBN, "YHe": YHe, "DH": DH}
 
         self.log.info(
-            f"--- {self.BBN_solver} done in {time.time()-start_time:.1f}s ---  "
+            f"--- PyPRIMAT done in {time.time()-start_time:.1f}s ---  "
             f"YpBBN={YpBBN:.8f}  YHe(CMB)={YHe:.8f}  D/H={DH:.6e}"
         )
         return True
 
     # ------------------------------------------------------------------ #
-    # BBN runners                                                          #
+    # BBN runner                                                           #
     # ------------------------------------------------------------------ #
-
-    @staticmethod
-    def _to_mathematica(value):
-        """Format a Python value as a Mathematica literal."""
-        if isinstance(value, bool):
-            return "True" if value else "False"
-        return str(value)
-
-    def _run_bbn_primat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
-        """Invoke PRIMAT via MathKernel and return a dict of abundances, or None on failure."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as tmp:
-            output_file = tmp.name
-
-        try:
-            use_EDE = fEDE > 0.0
-            args = {
-                "$ReducedNetwork":      self.ReducedNetwork,
-                r"h2\[CapitalOmega]b0": omegabh2,
-                "Nrelat":               DeltaNeff,  # Mathematica variable name
-                "$Verbose":             self.Verbose,
-                "$EDEBool":             use_EDE,
-            }
-            if use_EDE:
-                args.update({"fEDE": fEDE, "zcEDE": zcEDE, "wnEDE": wnEDE})
-
-            extra = "; ".join(f"{k}={self._to_mathematica(v)}" for k, v in args.items()) + ";"
-            option_output = f'$Outputfile="{output_file}"'
-
-            if self.Verbose:
-                self.log.info(f"PRIMAT args : {extra}")
-
-            # Run MathKernel from the script's directory (PRIMAT resolves its
-            # own relative paths there) via subprocess's cwd= rather than a
-            # global os.chdir, so we never mutate this process's working dir.
-            proc = subprocess.run(
-                [self.MathKernelCommand, "-initfile",
-                 os.path.basename(self.primat_script), extra, option_output],
-                capture_output=True, text=True, timeout=300,
-                cwd=os.path.dirname(self.primat_script),
-            )
-
-            if self.Verbose:
-                self.log.info(f"MathKernel exit code: {proc.returncode}")
-                for line in (proc.stdout or "").splitlines()[:50]:
-                    if line.strip():
-                        self.log.info(f"  stdout: {line}")
-                if proc.stderr:
-                    self.log.info(f"  stderr: {proc.stderr}")
-
-            if proc.returncode != 0:
-                self.log.error(f"PRIMAT failed (exit {proc.returncode}): {proc.stderr}")
-                return None
-
-            if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-                self.log.error("PRIMAT produced no output file.")
-                return None
-
-            results = {}
-            with open(output_file, newline="") as f:
-                for row in csv.reader(f):
-                    if len(row) >= 2:
-                        try:
-                            results[row[0]] = float(row[1])
-                        except ValueError:
-                            pass
-
-            if self.Verbose:
-                self.log.info(f"PRIMAT keys: {list(results.keys())[:15]}")
-
-            # PRIMAT only emits the BBN-convention Yp (key "YP").
-            # Compute the CMB-convention value here and store it under "YHe"
-            # so calculate() can retrieve it the same way as for PyPRIMAT.
-            ypbbn = self._extract_YpBBN(results)
-            if ypbbn is not None:
-                results["YHe"] = _ypcmb_from_ypbbn(ypbbn)
-
-            return results
-
-        finally:
-            if os.path.exists(output_file):
-                os.remove(output_file)
 
     def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
         """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
@@ -401,27 +193,3 @@ class PrimatTheory(Theory):
         except Exception as e:
             self.log.error(f"PyPRIMAT failed: {e}")
             return None
-
-    # ------------------------------------------------------------------ #
-    # Abundance extractors                                                 #
-    # ------------------------------------------------------------------ #
-
-    @staticmethod
-    def _extract_YpBBN(results):
-        """Return Yp (BBN-convention He-4 mass fraction) from BBN output dict."""
-        for key in ["YpBBN", "YP", "Yp", "YHe4", "Y_p", "yp"]:
-            if key in results:
-                return results[key]
-        return None
-
-    @staticmethod
-    def _extract_DH(results):
-        """Return D/H ratio from BBN output dict."""
-        for key in ["D/H", "DH", "YD/YH", "D_H"]:
-            if key in results:
-                return results[key]
-        YD = next((results[k] for k in ["YD", "Y_D", "D", "yD"] if k in results), None)
-        YH = next((results[k] for k in ["YH", "Y_H", "H", "yH", "YH1", "Y_H1"] if k in results), None)
-        if YD is not None and YH and YH > 0:
-            return YD / YH
-        return None

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "primat_cobaya"
 version = "0.1.0"
-description = "Cobaya theory+likelihood wrapper for the PRIMAT / PyPRIMAT BBN codes"
+description = "Cobaya theory+likelihood wrapper for the PyPRIMAT BBN code"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Cyril Pitrou", email = "cyril.pitrou@pm.me" }]
@@ -17,11 +17,10 @@ dependencies = [
 
 [tool.setuptools]
 # The importable package is `primat_cobaya/`. The bundled PyPRIMAT solver
-# (and the user-supplied PRIMAT Mathematica code) live at the repository root
-# and are located at run time relative to it; they are intentionally NOT part
-# of the installed wheel. Install in editable mode (`pip install -e .`) so the
-# repository tree — including PRIMAT/ and PyPRIMAT/ and their data files —
-# stays in place where the wrapper expects it.
+# lives at the repository root and is located at run time relative to it; it
+# is intentionally NOT part of the installed wheel. Install in editable mode
+# (`pip install -e .`) so the repository tree — including PyPRIMAT/ and its
+# data files — stays in place where the wrapper expects it.
 packages = ["primat_cobaya"]
 
 [tool.setuptools.package-data]

@@ -33,11 +33,9 @@
 # ── Theories ─────────────────────────────────────────────────────────────────
 theory:
 
-  # 1. PRIMAT: computes YHe and DH from omegabh2
+  # 1. PrimatTheory (PyPRIMAT): computes YHe and DH from omegabh2
   primat_cobaya.primat_theory.PrimatTheory:
 #    python_path: /nethome/pitrou/cobaya/primat_cobaya/
-#    PRIMAT_PATH: "PRIMAT"
-#    MathKernelCommand: "math13"
     ReducedNetwork: True
     Verbose: False
     fEDE: null #We sample on EDE parameters f and zc
@@ -45,7 +43,7 @@ theory:
     wnEDE:  1.0
     DeltaNeff: 0. #We do not sample on DeltaNeff
 
-  # 2. CLASS: uses YHe from PRIMAT instead of its internal BBN interpolation.
+  # 2. CLASS: uses YHe from PrimatTheory instead of its internal BBN interpolation.
   # We must explicitly list YHe under classy's own params block so that
   # Cobaya's CLASS wrapper knows to fetch it from the provider and forward
   # it to CLASS.  Without this, the wrapper never requests YHe and CLASS
@@ -247,6 +245,6 @@ sampler:
 # ── Output ───────────────────────────────────────────────────────────────────
 debug: True   # sets all components to DEBUG log level
               # you will see every parameter value CLASS receives,
-              # and the YHe/DH that PRIMAT computes each step
+              # and the YHe/DH that PrimatTheory computes each step
 resume: True
 output: chains/bbn_cmb_EDE
