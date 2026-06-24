@@ -1,12 +1,12 @@
 """
 primat_theory.py
 ----------------
-Cobaya Theory class that runs PyPRIMAT and stores primordial nucleosynthesis
+Cobaya Theory class that runs PRIMAT and stores primordial nucleosynthesis
 abundances as derived params.
 
 Two helium conventions
 ----------------------
-PyPRIMAT computes He-4 in two conventions that differ slightly due to nuclear
+PRIMAT computes He-4 in two conventions that differ slightly due to nuclear
 mass corrections:
 
   YpBBN  = 4 · Y(He4)   — "BBN convention"; this is what spectroscopic
@@ -17,12 +17,12 @@ mass corrections:
                            helium that enters recombination physics.
                            → fed into CLASS (or CAMB) via the 'YHe' parameter.
 
-For typical BBN values YHe is ~0.07 % smaller than YpBBN. PyPRIMAT returns
+For typical BBN values YHe is ~0.07 % smaller than YpBBN. PRIMAT returns
 both conventions directly.
 
 Data flow
 ---------
-  calculate() runs PyPRIMAT and writes:
+  calculate() runs PRIMAT and writes:
       state["derived"] = {"YpBBN": ..., "YHe": ..., "DH": ...}
 
   All three are declared via the class-level `output_params` attribute so
@@ -41,7 +41,7 @@ import time
 
 class PrimatTheory(Theory):
     """
-    Theory class that calls PyPRIMAT and provides primordial abundances
+    Theory class that calls PRIMAT and provides primordial abundances
     YHe (Yp mass fraction) and DH (D/H ratio) as Cobaya derived parameters.
     """
 
@@ -55,7 +55,7 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
     # Class-level attributes — overridden by YAML values automatically   #
     # ------------------------------------------------------------------ #
-    PyPRIMAT_PATH: str = ""
+    PRIMAT_PATH: str = ""
     ReducedNetwork: bool = True
     DeltaNeff: float = 0.0        # set to None to vary via sampler
     Verbose: bool = False
@@ -71,35 +71,35 @@ class PrimatTheory(Theory):
 
     def initialize(self):
         # base = the primat_tools repo root (parent of the primat_cobaya/ package).
-        # Relative PyPRIMAT_PATH values from the YAML are resolved against it.
+        # Relative PRIMAT_PATH values from the YAML are resolved against it.
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self._init_pyprimat(base)
+        self._init_primat(base)
 
-    def _init_pyprimat(self, base):
-        """Verify that pyprimat is importable. Prefers the installed package; falls back to PyPRIMAT_PATH."""
+    def _init_primat(self, base):
+        """Verify that primat is importable. Prefers the installed package; falls back to PRIMAT_PATH."""
         import sys
         try:
-            import pyprimat  # noqa: F401 — just checking it's importable
-            self.log.info("PrimatTheory initialised with PyPRIMAT (installed package).")
+            import primat  # noqa: F401 — just checking it's importable
+            self.log.info("PrimatTheory initialised with PRIMAT (installed package).")
             return
         except ImportError:
             pass
 
         # Not installed — try path-based fallback
-        if not self.PyPRIMAT_PATH:
-            self.PyPRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PyPRIMAT"))
-        elif not os.path.isabs(self.PyPRIMAT_PATH):
-            self.PyPRIMAT_PATH = os.path.join(base, self.PyPRIMAT_PATH)
+        if not self.PRIMAT_PATH:
+            self.PRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PRIMAT"))
+        elif not os.path.isabs(self.PRIMAT_PATH):
+            self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
 
-        if not os.path.isdir(self.PyPRIMAT_PATH):
+        if not os.path.isdir(self.PRIMAT_PATH):
             raise FileNotFoundError(
-                f"pyprimat is not installed and PyPRIMAT directory not found at {self.PyPRIMAT_PATH}. "
-                "Install PyPRIMAT with: pip install -e /path/to/PyPRIMAT"
+                f"primat is not installed and PRIMAT directory not found at {self.PRIMAT_PATH}. "
+                "Install PRIMAT with: pip install -e /path/to/PRIMAT"
             )
-        if self.PyPRIMAT_PATH not in sys.path:
-            sys.path.insert(0, self.PyPRIMAT_PATH)
-        self.log.info("PrimatTheory initialised with PyPRIMAT (path fallback).")
-        self.log.info(f"  PyPRIMAT path : {self.PyPRIMAT_PATH}")
+        if self.PRIMAT_PATH not in sys.path:
+            sys.path.insert(0, self.PRIMAT_PATH)
+        self.log.info("PrimatTheory initialised with PRIMAT (path fallback).")
+        self.log.info(f"  PRIMAT path : {self.PRIMAT_PATH}")
 
     def get_requirements(self):
         """
@@ -120,7 +120,7 @@ class PrimatTheory(Theory):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
         """
-        Run PyPRIMAT for the current parameter point and store abundances
+        Run PRIMAT for the current parameter point and store abundances
         in state["derived"] so Cobaya routes them to the likelihood and
         writes them to the chain.
         """
@@ -133,12 +133,12 @@ class PrimatTheory(Theory):
         wnEDE     = self.wnEDE     if self.wnEDE     is not None else self.provider.get_param("wnEDE")
 
         self.log.info(
-            f"--- Running PyPRIMAT ---  "
+            f"--- Running PRIMAT ---  "
             f"omegabh2={omegabh2}  DeltaNeff={DeltaNeff}  "
             f"fEDE={fEDE}  zcEDE={zcEDE}  wnEDE={wnEDE}"
         )
 
-        results = self._run_bbn_pyprimat(omegabh2, DeltaNeff=DeltaNeff,
+        results = self._run_bbn_primat(omegabh2, DeltaNeff=DeltaNeff,
                                          fEDE=fEDE, zcEDE=zcEDE, wnEDE=wnEDE)
 
         # Always populate state["derived"] — use NaN on failure so the
@@ -162,7 +162,7 @@ class PrimatTheory(Theory):
         state["derived"] = {"YpBBN": YpBBN, "YHe": YHe, "DH": DH}
 
         self.log.info(
-            f"--- PyPRIMAT done in {time.time()-start_time:.1f}s ---  "
+            f"--- PRIMAT done in {time.time()-start_time:.1f}s ---  "
             f"YpBBN={YpBBN:.8f}  YHe(CMB)={YHe:.8f}  D/H={DH:.6e}"
         )
         return True
@@ -171,11 +171,11 @@ class PrimatTheory(Theory):
     # BBN runner                                                           #
     # ------------------------------------------------------------------ #
 
-    def _run_bbn_pyprimat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
-        """Invoke PyPRIMAT directly and return a dict of abundances, or None on failure."""
+    def _run_bbn_primat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
+        """Invoke PRIMAT directly and return a dict of abundances, or None on failure."""
         try:
-            from pyprimat import PyPR
-            results = PyPR({
+            from primat import PRIMAT
+            results = PRIMAT({
                 "Omegabh2":  omegabh2,
                 "DeltaNeff": DeltaNeff,
                 "fEDE":      fEDE,
@@ -184,12 +184,12 @@ class PrimatTheory(Theory):
                 "network":   "small" if self.ReducedNetwork else "medium",
                 "verbose":   self.Verbose,
             }).solve()
-            # PyPRIMAT provides both conventions directly; use them as-is.
+            # PRIMAT provides both conventions directly; use them as-is.
             return {
                 "YpBBN": results['YPBBN'],
                 "YHe":   results['YPCMB'],  # CMB convention; fed into CLASS
                 "DH":    results['DoH'],
             }
         except Exception as e:
-            self.log.error(f"PyPRIMAT failed: {e}")
+            self.log.error(f"PRIMAT failed: {e}")
             return None
