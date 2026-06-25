@@ -80,25 +80,38 @@ class PrimatTheory(Theory):
         import sys
         try:
             import primat  # noqa: F401 — just checking it's importable
-            self.log.info("PrimatTheory initialised with PRIMAT (installed package).")
+            from primat.backend import HAS_C_BACKEND
+            backend = "C" if HAS_C_BACKEND else "pure-Python"
+            self.log.info(f"PrimatTheory initialised with primat (installed package, {backend} backend available).")
             return
         except ImportError:
             pass
 
-        # Not installed — try path-based fallback
+        # Not installed — try path-based fallback (prefer PRIMAT, fall back to PyPRIMAT)
         if not self.PRIMAT_PATH:
-            self.PRIMAT_PATH = os.path.normpath(os.path.join(base, "..", "PRIMAT"))
+            primat_dir = os.path.normpath(os.path.join(base, "..", "PRIMAT"))
+            pyprimat_dir = os.path.normpath(os.path.join(base, "..", "PyPRIMAT"))
+
+            if os.path.isdir(primat_dir):
+                self.PRIMAT_PATH = primat_dir
+            elif os.path.isdir(pyprimat_dir):
+                self.PRIMAT_PATH = pyprimat_dir
+            else:
+                raise FileNotFoundError(
+                    f"primat is not installed and neither PRIMAT nor PyPRIMAT directory found. "
+                    "Install PRIMAT with: pip install -e /path/to/PRIMAT"
+                )
         elif not os.path.isabs(self.PRIMAT_PATH):
             self.PRIMAT_PATH = os.path.join(base, self.PRIMAT_PATH)
 
         if not os.path.isdir(self.PRIMAT_PATH):
             raise FileNotFoundError(
-                f"primat is not installed and PRIMAT directory not found at {self.PRIMAT_PATH}. "
+                f"PRIMAT directory not found at {self.PRIMAT_PATH}. "
                 "Install PRIMAT with: pip install -e /path/to/PRIMAT"
             )
         if self.PRIMAT_PATH not in sys.path:
             sys.path.insert(0, self.PRIMAT_PATH)
-        self.log.info("PrimatTheory initialised with PRIMAT (path fallback).")
+        self.log.info("PrimatTheory initialised with primat (path fallback).")
         self.log.info(f"  PRIMAT path : {self.PRIMAT_PATH}")
 
     def get_requirements(self):
@@ -172,19 +185,32 @@ class PrimatTheory(Theory):
     # ------------------------------------------------------------------ #
 
     def _run_bbn_primat(self, omegabh2, DeltaNeff=0.0, fEDE=0.0, zcEDE=1e8, wnEDE=1.0):
-        """Invoke PRIMAT directly and return a dict of abundances, or None on failure."""
+        """Invoke PRIMAT and return a dict of abundances, or None on failure.
+
+        Uses the primat.backend.run_bbn dispatcher, which automatically selects
+        the C backend (if available) or falls back to pure-Python.
+        """
         try:
-            from primat import PRIMAT
-            results = PRIMAT({
+            from primat.backend import run_bbn
+
+            params = {
                 "Omegabh2":  omegabh2,
                 "DeltaNeff": DeltaNeff,
                 "fEDE":      fEDE,
                 "zcEDE":     zcEDE,
                 "wnEDE":     wnEDE,
-                "network":   "small" if self.ReducedNetwork else "medium",
                 "verbose":   self.Verbose,
-            }).solve()
-            # PRIMAT provides both conventions directly; use them as-is.
+            }
+
+            if self.ReducedNetwork:
+                params["network"] = "small"
+            else:
+                # Old "medium" network is now "large" with amax=8
+                params["network"] = "large"
+                params["amax"] = 8
+
+            results = run_bbn(params)
+
             return {
                 "YpBBN": results['YPBBN'],
                 "YHe":   results['YPCMB'],  # CMB convention; fed into CLASS

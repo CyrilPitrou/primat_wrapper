@@ -28,8 +28,8 @@ BASE_CONFIG = {
     },
     "params": {
         "omegabh2": OMEGABH2,
-        "YHe": {"latex": "Y_p"},
-        "DH":  {"latex": "({\\rm D/H})"},
+        "YpBBN": {"latex": "Y_p^{\\rm BBN}"},
+        "DH":    {"latex": "({\\rm D/H})"},
     },
 }
 
@@ -61,13 +61,13 @@ def _eval(tabulated: bool):
 
 def test_uniform_mode_finite():
     loglike, derived = _eval(tabulated=False)
-    print(f"[uniform]    YHe={derived['YHe']:.8f}  D/H={derived['DH']:.6e}  loglike={loglike:.4f}")
+    print(f"[uniform]    YpBBN={derived['YpBBN']:.8f}  D/H={derived['DH']:.6e}  loglike={loglike:.4f}")
     assert np.isfinite(loglike), "uniform mode: non-finite log-likelihood"
 
 
 def test_tabulated_mode_finite():
     loglike, derived = _eval(tabulated=True)
-    print(f"[tabulated]  YHe={derived['YHe']:.8f}  D/H={derived['DH']:.6e}  loglike={loglike:.4f}")
+    print(f"[tabulated]  YpBBN={derived['YpBBN']:.8f}  D/H={derived['DH']:.6e}  loglike={loglike:.4f}")
     assert np.isfinite(loglike), "tabulated mode: non-finite log-likelihood"
 
 
